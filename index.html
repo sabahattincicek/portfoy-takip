@@ -289,6 +289,13 @@
   .dlg-x { border: 0; background: none; cursor: pointer; width: 32px; height: 32px; border-radius: 8px; color: var(--muted); font-size: 15px; }
   .dlg-x:hover { background: var(--line-2); color: var(--text); }
   .dlg-b { padding: 12px 20px 4px; display: grid; gap: 14px; }
+  .dlg.wide { width: min(680px, 100%); }
+  .dlg-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; }
+  .dlg-grid .span2 { grid-column: 1 / -1; }
+  .dlg select { width: 100%; }
+  .t td.nowrap { white-space: nowrap; }
+  .t td.tx-note { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .t td.empty-row { text-align: center; color: var(--muted); padding: 22px; }
   .dlg-f { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px 18px; }
   .dlg .lab .req { color: var(--neg); }
   .dlg .lab .opt { color: var(--muted); font-weight: 400; }
@@ -699,7 +706,7 @@ var Engine = (function () {
         { a: 'Aracı kurum hesapların', b: 'Varlıklarının güncel piyasa değeri ve komisyon oranı', c: 'Aylık takip → varlık değerleri, İşlem kaydı → Aracı kurumlar', d: '' }
       ],
       links3: { tufe: 'https://data.tuik.gov.tr', broker: '(kendi linkini ekle)', other: '(kendi linkini ekle)' },
-      tx: [blankTx()],
+      tx: [],
       monthly: {}
     };
   }
@@ -736,14 +743,14 @@ var Engine = (function () {
     }
     if (o.links3) ['tufe', 'broker', 'other'].forEach(function (k) { if (k in o.links3) d.links3[k] = str(o.links3[k]); });
     if (Array.isArray(o.tx)) {
+      // Kayıtlar pencereden eklenir; eski sürümlerin boş satırları atlanır
       d.tx = o.tx.map(function (t) {
         t = t || {};
         return {
           date: /^\d{4}-\d{2}-\d{2}$/.test(t.date || '') ? t.date : '', asset: str(t.asset), instr: str(t.instr),
           broker: str(t.broker), paid: numOrNull(t.paid), comm: numOrNull(t.comm), note: str(t.note)
         };
-      });
-      if (!d.tx.length) d.tx.push(blankTx());
+      }).filter(function (t) { return !isBlankTx(t); });
     }
     if (o.monthly && typeof o.monthly === 'object') {
       Object.keys(o.monthly).forEach(function (k) {
@@ -1161,34 +1168,36 @@ var Engine = (function () {
       h('th', { class: 'num', text: 'Ödenen tutar' }), h('th', { class: 'num wrap', text: 'Komisyon % (ops.)' }),
       h('th', { class: 'calc num wrap', text: 'Uygulanan %' }), h('th', { class: 'calc num', text: 'Komisyon' }),
       h('th', { class: 'calc num', text: 'Net tutar' }), h('th', { class: 'calc ctr wrap', text: 'Takip ayı' }),
-      h('th', { text: 'Not' }), h('th', { 'aria-label': 'Sil' })
+      h('th', { text: 'Not' }), h('th', { 'aria-label': 'İşlemler' })
     ])]);
     var tb = h('tbody');
+    var dash = function (v) { return v ? h('span', { text: v }) : h('span', { class: 'muted', text: '—' }); };
     s.tx.forEach(function (t, i) {
       var r = 19 + i;
-      var tr = h('tr', null, [
+      var tr = h('tr', { 'data-tx': String(i) }, [
         h('td', { class: 'rownum', text: String(i + 1) }),
-        h('td', { style: 'min-width:110px' }, [inp('2!A' + r, bind(t, 'date', 'date', { ph: 'gg.aa.yyyy', label: (i + 1) + '. kayıt tarihi' }))]),
-        h('td', { style: 'min-width:168px' }, [inp('2!B' + r, bind(t, 'asset', 'select', { opts: assetOpts, label: (i + 1) + '. kayıt varlık' }))]),
-        h('td', { style: 'min-width:104px' }, [inp('2!C' + r, bind(t, 'instr', 'text', { ph: 'SPY, Gram Altın…', label: (i + 1) + '. kayıt enstrüman' }))]),
-        h('td', { style: 'min-width:132px' }, [inp('2!D' + r, bind(t, 'broker', 'select', { opts: brokerOpts, label: (i + 1) + '. kayıt aracı kurum' }))]),
-        h('td', { style: 'min-width:128px' }, [inp('2!E' + r, bind(t, 'paid', 'money', { f: F.tlp, ph: '0,00 TL', label: (i + 1) + '. kayıt ödenen tutar' }), 'r')]),
-        h('td', { style: 'min-width:92px' }, [inp('2!F' + r, bind(t, 'comm', 'pct', {
-          f: F.pc2, ph: 'otomatik', label: (i + 1) + '. kayıt komisyon',
-          check: function (v) { return v != null && (v < 0 || v > 0.1) ? 'Komisyon % 0 ile %10 arasında olmalı' : ''; }
-        }), 'r')]),
+        h('td', { class: 'nowrap' }, [t.date ? h('span', { text: fmtDate(Engine.isoToSerial(t.date)) }) : h('span', { class: 'cf-warn', text: 'tarih yok' })]),
+        h('td', { class: 'nowrap' }, [t.asset ? h('span', { class: 'asset-name', text: t.asset }) : h('span', { class: 'cf-warn', text: 'varlık yok' })]),
+        h('td', null, [dash(t.instr)]),
+        h('td', { class: 'nowrap' }, [dash(t.broker)]),
+        h('td', { class: 'num' }, [t.paid == null ? h('span', { class: 'muted', text: '—' }) : h('span', { text: fmt(t.paid, F.tlp) })]),
+        h('td', { class: 'num' }, [t.comm == null ? h('span', { class: 'muted', text: 'otomatik' }) : h('span', { text: fmt(t.comm, F.pc2) })]),
         h('td', { class: 'calc num' }, [out('2!G' + r, F.pc2)]),
         h('td', { class: 'calc num' }, [out('2!H' + r, F.tl)]),
         h('td', { class: 'calc num' }, [out('2!I' + r, F.tl)]),
         h('td', { class: 'calc ctr' }, [out('2!J' + r, '0')]),
-        h('td', { style: 'min-width:104px' }, [inp('2!K' + r, bind(t, 'note', 'text', { ph: null, label: (i + 1) + '. kayıt not' }))]),
-        h('td', null, [h('button', { type: 'button', class: 'del', title: 'Kaydı sil', 'aria-label': (i + 1) + '. kaydı sil', 'data-del': String(i), onclick: function () { delTx(i); } }, [trash()])])
+        h('td', { class: 'tx-note' }, [dash(t.note)]),
+        h('td', null, [h('span', { class: 'src-act' }, [
+          h('button', { type: 'button', class: 'ibtn', title: 'Düzenle', 'aria-label': (i + 1) + '. kaydı düzenle', 'data-tx-edit': String(i), onclick: function () { txDialog(i); } }, [pencil()]),
+          h('button', { type: 'button', class: 'del', title: 'Kaydı sil', 'aria-label': (i + 1) + '. kaydı sil', 'data-del': String(i), onclick: function () { delTx(i); } }, [trash()])
+        ])])
       ]);
       painter(function () { paintCat(tr, assetOpts().indexOf(t.asset)); });
       tb.appendChild(tr);
     });
-    var addBtn = function (cls) { return h('button', { type: 'button', class: 'btn ' + (cls || ''), 'data-add': '1', onclick: addTx }, ['＋ Yeni alım']); };
-    var ledger = card('📝 Alım kayıtları', 'Her alımı ayrı satır olarak gir (aynı ay birden fazla olabilir). Gri sütunlar otomatik hesaplanır.',
+    if (!s.tx.length) tb.appendChild(h('tr', null, [h('td', { colspan: '13', class: 'empty-row', text: 'Henüz alım yok. “＋ Yeni alım” ile ilk alımını ekle.' })]));
+    var addBtn = function (cls) { return h('button', { type: 'button', class: 'btn ' + (cls || ''), 'data-add': '1', onclick: function () { txDialog(null); } }, ['＋ Yeni alım']); };
+    var ledger = card('📝 Alım kayıtları', 'Her alım ayrı bir kayıt (aynı ay birden fazla olabilir). Eklemek için ＋ Yeni alım, değiştirmek için ✎. Gri sütunlar otomatik hesaplanır.',
       [h('div', { class: 'tscroll' }, [h('table', { class: 't' }, [thead, tb])])],
       { flush: true, action: addBtn(), foot: addBtn('light') });
 
@@ -1468,21 +1477,81 @@ var Engine = (function () {
     return svg;
   }
 
-  function addTx() {
-    state.tx.push(blankTx());
-    changed(true);
-    var el = document.querySelector('[data-in="2!A' + (18 + state.tx.length) + '"] input');
-    if (el) { el.focus(); if (el.scrollIntoView) el.scrollIntoView({ block: 'nearest' }); }
+  // ---------- Alım ekle / düzenle penceresi ----------
+  function txDialog(idx) {
+    var editing = idx != null, x = editing ? state.tx[idx] : blankTx();
+    var opener = document.activeElement, f = {};
+    var today = new Date();
+    function input(key, ph, val, mode) {
+      var el = h('input', { id: 'td-' + key, type: 'text', placeholder: ph, autocomplete: 'off', inputmode: mode || null });
+      el.value = val; f[key] = el; return el;
+    }
+    function select(key, opts, val, emptyText) {
+      var el = h('select', { id: 'td-' + key });
+      var all = [''].concat(opts);
+      if (val && opts.indexOf(val) < 0) all.push(val);
+      all.forEach(function (o) { el.appendChild(h('option', { value: o, text: o === '' ? emptyText : (opts.indexOf(o) < 0 ? o + ' (listede yok)' : o) })); });
+      el.value = val || ''; f[key] = el; return el;
+    }
+    function field(key, label, ctl, req, hint) {
+      return h('div', { class: 'field' }, [
+        h('label', { class: 'lab', for: 'td-' + key }, [label, req ? h('span', { class: 'req', text: ' *' }) : h('span', { class: 'opt', text: ' (isteğe bağlı)' })]),
+        h('div', { class: 'in' }, [ctl]),
+        hint ? h('span', { class: 'hint', text: hint }) : null
+      ]);
+    }
+    var dateVal = x.date ? fmtDate(Engine.isoToSerial(x.date)) : (editing ? '' : ('0' + today.getDate()).slice(-2) + '.' + ('0' + (today.getMonth() + 1)).slice(-2) + '.' + today.getFullYear());
+    var err = h('div', { class: 'dlg-err', role: 'alert' });
+    var form = h('form', { class: 'dlg wide', novalidate: 'novalidate' }, [
+      h('div', { class: 'dlg-h' }, [
+        h('h3', { id: 'td-title', text: editing ? (idx + 1) + '. alımı düzenle' : 'Yeni alım' }),
+        h('button', { type: 'button', class: 'dlg-x', 'aria-label': 'Kapat', text: '✕', onclick: function () { close(true); } })
+      ]),
+      h('div', { class: 'dlg-b dlg-grid' }, [
+        field('date', 'Tarih', input('date', 'gg.aa.yyyy', dateVal, 'numeric'), true),
+        field('asset', 'Varlık', select('asset', state.assets.map(function (a) { return a.name; }), x.asset, '— seç —'), true),
+        field('paid', 'Ödenen tutar (TL)', input('paid', 'örn. 10.000', x.paid == null ? '' : fmt(x.paid, '#,##0.00'), 'decimal'), true, 'Hesabından çıkan toplam, komisyon dahil.'),
+        field('broker', 'Aracı kurum', select('broker', state.brokers.map(function (b) { return b.name; }), x.broker, '— seçilmedi —'), false),
+        field('comm', 'Komisyon oranı (%)', input('comm', 'boşsa kurum / varsayılan oran', x.comm == null ? '' : editNum(x.comm, true), 'decimal'), false, 'Yalnızca bu alıma özel oran varsa yaz.'),
+        field('instr', 'Enstrüman', input('instr', 'SPY, Gram Altın, fon kodu…', x.instr || ''), false),
+        h('div', { class: 'span2' }, [field('note', 'Not', input('note', 'örn. prim parası', x.note || ''), false)]),
+        h('div', { class: 'span2' }, [err])
+      ]),
+      h('div', { class: 'dlg-f' }, [
+        h('button', { type: 'button', class: 'btn light', text: 'İptal', onclick: function () { close(true); } }),
+        h('button', { type: 'submit', class: 'btn', 'data-tx-save': '1', text: editing ? 'Kaydet' : 'Alımı ekle' })
+      ])
+    ]);
+    var close = openDialog(form, 'td-title', f.date, opener);
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var fail = function (msg, el) { err.textContent = msg; el.focus(); };
+      var date = parseDateTR(f.date.value);
+      if (!date) return fail(date === '' ? 'Tarih boş olamaz.' : 'Tarih gg.aa.yyyy biçiminde geçerli bir tarih olmalı.', f.date);
+      if (!f.asset.value) return fail('Varlık seç.', f.asset);
+      var paid = parseNumTR(f.paid.value);
+      if (paid == null || !(paid > 0)) return fail('Ödenen tutar 0\'dan büyük bir sayı olmalı (örn. 10.000 ya da 2.500,50).', f.paid);
+      var comm = parseNumTR(f.comm.value);
+      if (comm === undefined || (comm != null && (comm < 0 || comm > 10))) return fail('Komisyon oranı 0 ile 10 arasında bir sayı olmalı (örn. 0,15).', f.comm);
+      var v = {
+        date: date, asset: f.asset.value, instr: f.instr.value.trim(), broker: f.broker.value,
+        paid: paid, comm: comm == null ? null : Number((comm / 100).toPrecision(15)), note: f.note.value.trim()
+      };
+      if (editing) state.tx[idx] = v; else state.tx.push(v);
+      close(false);
+      changed(true);
+      var back = document.querySelector(editing ? '[data-tx-edit="' + idx + '"]' : '[data-add]');
+      if (back) back.focus();
+      toast(editing ? (idx + 1) + '. alım güncellendi.' : 'Alım eklendi (' + state.tx.length + '. kayıt).');
+    });
   }
   var lastDeleted = null;
   function delTx(i) {
     lastDeleted = { i: i, t: state.tx[i] };
     state.tx.splice(i, 1);
-    if (!state.tx.length) state.tx.push(blankTx());
     changed(true);
     toast((i + 1) + '. kayıt silindi.', 'Geri al', function () {
       if (!lastDeleted) return;
-      if (state.tx.length === 1 && isBlankTx(state.tx[0])) state.tx = [];
       state.tx.splice(lastDeleted.i, 0, lastDeleted.t);
       lastDeleted = null;
       changed(true);

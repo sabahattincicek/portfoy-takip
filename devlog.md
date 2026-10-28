@@ -5,6 +5,14 @@
 
 ---
 
+## 2026-10-28 15:30 — Alım kayıtları: ekle / düzenle pencereden
+- Alım tablosu artık salt okunur: tarih, varlık (kalın), enstrüman, kurum, ödenen tutar, işleme özel oran (yoksa "otomatik"), hesaplanan sütunlar, not; sonda ✎ Düzenle ve sil. Kategori renkleri aynı.
+- "＋ Yeni alım" (üstte ve altta) ve ✎ aynı pencereyi açar (2 sütunlu, geniş): Tarih* (yeni kayıtta bugün dolu), Varlık*, Ödenen tutar*, Aracı kurum, Komisyon %, Enstrüman, Not. Doğrulama: geçerli gg.aa.yyyy tarih, tutar > 0, oran 0–10. Listede olmayan eski kurum adı "(listede yok)" olarak korunur.
+- Boş satır kavramı kalktı: kayıt yoksa tabloda yönlendirme satırı; eski kayıtlardaki/JSON'lardaki tamamen boş satırlar açılışta atlanır. Silme + Geri al aynı.
+- Motor ve kayıt biçimi değişmedi.
+- Test: yeni alım testi 30/30; kurum listesi 33/33; kaynak 22/22, genel durum 16/16, grafik 15/15; arayüz testi (kayıt adımları pencereye uyarlanmış kopya) 64/64.
+- DÜZELTME: önceki kayıtlarda "ui_test2 17 bilinen hata" yazıyordu; sebep testi yanlış veri dosyasıyla (`ornek-veri.json`) çalıştırmamdı. Doğru dosyayla (`ui_state.json`) oturum başındaki sürüm 65/65, 8 yuva kaldırıldıktan sonraki sürüm yalnızca beklenen "8 kurum satırı" kontrolüyle 64/65. Gerçek bir hata yoktu.
+
 ## 2026-10-28 15:25 — Aracı kurum listesi salt okunur, düzenleme pencereden
 - Kurum satırları artık metin: ad (kalın), oran (yoksa "Varsayılan"), kullanılan oran, link (tıklanabilir ya da "Link yok"); sonda ✎ Düzenle ve sil düğmeleri (Kaynaklar listesiyle aynı düzen).
 - ✎ aynı pencereyi "Aracı kurumu düzenle" olarak dolu açar; "Kaydet" kurumu aynı sırada günceller. Ad değişirse o kurumu kullanan alım kayıtları da yeni adı alır (özette kayıp olmasın). Başka kurumun adı reddedilir; kendi adının harf değişikliği kabul.
