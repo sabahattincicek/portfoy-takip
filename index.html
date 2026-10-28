@@ -309,6 +309,8 @@
 
   .kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0 24px; }
   .kv > div { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line-2); font-size: 13.5px; }
+  .kv3 { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 860px) { .kv3 { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); } }
   .kv .k { color: var(--text-2); }
   .kv .v { font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
 
@@ -1572,7 +1574,7 @@ var Engine = (function () {
       tile('Kümülatif enflasyon', out('3!B17', F.p2), ['Reel hesap ayı: ', out('3!B13', F.int0)]),
       tile('Ort. aylık getiri (geometrik)', out('3!B18', F.p2, '', cfSign), ['Yıllık: ', out('3!B19', F.p2, '', cfSign)])
     ]);
-    var kv = h('div', { class: 'kv' });
+    var kv = h('div', { class: 'kv kv3' });
     [['İlk yatırım tarihi', '3!B4', F.dt], ['Toplam yatırılan (tüm kayıtlar)', '3!B7', F.tl], ['Toplam ödenen komisyon', '3!B8', F.tl],
      ['Son değerlemeye kadar yatırılan', '3!B9', F.tl], ["Reel anapara (ilk ay TL'si)", '3!B14', F.tl], ["Reel değer (ilk ay TL'si)", '3!B15', F.tl]]
       .forEach(function (p) { kv.appendChild(h('div', null, [h('span', { class: 'k', text: p[0] }), h('span', { class: 'v' }, [out(p[1], p[2])])])); });
@@ -1619,12 +1621,6 @@ var Engine = (function () {
     }
     var table = card('📅 Aylık kayıtlar', 'Ay 1 = ilk yatırımının ayı; her yeni ay kendiliğinden eklenir (120 aya kadar). Sadece mavi alanları doldur: TÜFE ve varlık değerleri.', [body], { flush: true });
 
-    var links = card('🔗 Hızlı linkler', null, [h('div', { class: 'stack', style: 'gap:10px' }, [
-      h('div', { class: 'field' }, [h('span', { class: 'lab', text: 'TÜFE kaynağı' }), inp('3!E13', bind(s.links3, 'tufe', 'link'))]),
-      h('div', { class: 'field' }, [h('span', { class: 'lab', text: 'Aracı kurum' }), inp('3!E14', bind(s.links3, 'broker', 'link'))]),
-      h('div', { class: 'field' }, [h('span', { class: 'lab', text: 'Diğer' }), inp('3!E15', bind(s.links3, 'other', 'link'))]),
-      h('span', { class: 'muted', text: 'Tüm kaynak listesi: Portföy sekmesi.' })
-    ])]);
     var g = guide('Nasıl kullanılır — Aylık takip', [
       'Bu tablo İşlem kaydı sekmesine ilk girişini yaptığında başlar. Ay 1 = ilk yatırımının ayı; her yeni ay kendiliğinden eklenir (120 aya kadar).',
       "TÜFE: TÜİK her ayın 3'ü civarı bir önceki ayın enflasyonunu açıklar. O ayın satırına aylık % değişimi yaz (örn. %2,5 için 2,5).",
@@ -1636,7 +1632,7 @@ var Engine = (function () {
     ], ['⚠ İlk yatırımından daha eski tarihli bir kayıt eklersen ay numaraları kayar; girdiğin TÜFE ve değerleri yeni satırlarına taşıman gerekir.']);
 
     return [pageHead('Aylık takip ve gerçekleşen performans', 'Aylar ilk yatırımının ayından başlar ve bugüne kadar kendiliğinden uzar. Ay sonunda TÜFE’yi ve varlık değerlerini gir.'),
-      h('div', { class: 'stack' }, [tiles, h('div', { class: 'grid-2' }, [details, links]), table, g])];
+      h('div', { class: 'stack' }, [tiles, details, table, g])];
   }
 
   // =====================================================================

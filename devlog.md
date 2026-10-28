@@ -5,6 +5,11 @@
 
 ---
 
+## 2026-10-28 15:36 — Aylık takip: Hızlı linkler kartı kaldırıldı
+- "🔗 Hızlı linkler" kartı (TÜFE kaynağı / Aracı kurum / Diğer) Aylık takip sekmesinden çıkarıldı; "Güncel durum" kartı artık tam genişlik, 3 sütunlu (dar ekranda otomatik sarar).
+- Veri tarafı dokunulmadı: `links3` alanı state'te ve JSON dışa/içe aktarmada aynen duruyor (geriye dönük uyum). Motor değişmedi.
+- Test: betik sözdizimi kontrolü (node --check) OK; Edge headless ekran görüntüsüyle sekme hatasız açılıyor, kart yok, düzen doğru.
+
 ## 2026-10-28 15:30 — Alım kayıtları: ekle / düzenle pencereden
 - Alım tablosu artık salt okunur: tarih, varlık (kalın), enstrüman, kurum, ödenen tutar, işleme özel oran (yoksa "otomatik"), hesaplanan sütunlar, not; sonda ✎ Düzenle ve sil. Kategori renkleri aynı.
 - "＋ Yeni alım" (üstte ve altta) ve ✎ aynı pencereyi açar (2 sütunlu, geniş): Tarih* (yeni kayıtta bugün dolu), Varlık*, Ödenen tutar*, Aracı kurum, Komisyon %, Enstrüman, Not. Doğrulama: geçerli gg.aa.yyyy tarih, tutar > 0, oran 0–10. Listede olmayan eski kurum adı "(listede yok)" olarak korunur.
