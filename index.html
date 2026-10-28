@@ -216,7 +216,7 @@
   .tile-in .in { margin-top: 6px; }
   .tile-in .in input { height: 40px; font-size: 18px; font-weight: 650; }
   .empty-note { margin: 0; color: var(--muted); }
-  .broker-row { display: grid; grid-template-columns: 28px minmax(0, 1.3fr) 170px 84px minmax(0, 1.7fr) 32px; gap: 12px; align-items: center; padding: 5px 0; }
+  .broker-row { display: grid; grid-template-columns: 22px minmax(0, 1.2fr) 104px 70px minmax(0, 1.3fr) 28px; gap: 8px; align-items: center; padding: 5px 0; }
   .broker-row.head { font-size: 12px; color: var(--muted); font-weight: 600; }
   .broker-row .idx { color: var(--muted); font-size: 12px; text-align: center; }
   .chip { display: inline-block; padding: 2px 8px; border-radius: 6px; background: var(--calc); font-size: 12.5px; font-variant-numeric: tabular-nums; text-align: right; min-width: 64px; }
@@ -1228,7 +1228,7 @@ var Engine = (function () {
       if (r !== 13) painter(function (V) { tr.style.display = V['2!M' + r] === '' ? 'none' : ''; });
       brows.appendChild(tr);
     });
-    var brokerSum = card('🏦 Aracı kurum bazında özet', 'Kurum listesini aşağıdaki Aracı kurumlar ve komisyon kartında düzenle; bu tablo kendiliğinden güncellenir.', [
+    var brokerSum = card('🏦 Aracı kurum bazında özet', 'Kurum listesini soldaki Aracı kurumlar ve komisyon kartında düzenle; bu tablo kendiliğinden güncellenir.', [
       h('div', { class: 'tscroll' }, [h('table', { class: 't' }, [
         h('thead', null, [h('tr', null, [h('th', { text: 'Kurum' }), h('th', { class: 'num', text: 'Ödenen' }), h('th', { class: 'num', text: 'Komisyon' }), h('th', { class: 'num', text: 'Net yatırım' }), h('th', { class: 'num', text: 'Pay' }), h('th', { class: 'ctr', text: 'İşlem' })])]),
         brows,
@@ -1283,7 +1283,7 @@ var Engine = (function () {
     ], defs);
 
     return [pageHead('Yatırım işlem defteri', 'Her alımı istediğin tarihte bir satır olarak gir. Hesaplamalar ilk girişinle başlar.'),
-      h('div', { class: 'stack' }, [tiles, h('div', { class: 'grid-2e' }, [assetSum, brokerSum]), commission, g, ledger])];
+      h('div', { class: 'stack' }, [tiles, assetSum, g, h('div', { class: 'grid-2e' }, [commission, brokerSum]), ledger])];
   }
   function pencil() {
     var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');

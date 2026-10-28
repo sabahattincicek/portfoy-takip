@@ -5,6 +5,11 @@
 
 ---
 
+## 2026-10-28 15:20 — İşlem kaydı: yeni kart düzeni (deneme)
+- Sıra: gösterge kutuları → Varlık bazında özet (tam genişlik) → Sütunlar ve ipuçları (açılır/kapanır) → yan yana [Aracı kurumlar ve komisyon | Aracı kurum bazında özet] → Alım kayıtları.
+- Kurum listesi yarım genişliğe sığsın diye sütunlar daraltıldı (oran 104 px, kullanılan 70 px); özet kartındaki "aşağıdaki" ifadesi "soldaki" oldu.
+- Test: kurum listesi 24/24; kaynak 22/22, genel durum 16/16, grafik 15/15; `ui_test2` önceki çalıştırmayla aynı. Edge headless ekran görüntüsüyle düzen kontrol edildi.
+
 ## 2026-10-28 15:14 — Aracı kurum listesi tek sütun + link
 - Kurum listesi iki sütun yerine tek sütun (Kurum adı · Komisyon oranı · Kullanılan · Link · sil).
 - Her kuruma isteğe bağlı link: "Aracı kurum ekle" penceresinde yeni alan (http/https/www doğrulamalı), listede satır içinde ✎ ile düzenlenir, tıklanınca yeni sekmede açılır; uzun link "…" ile kısalır.
