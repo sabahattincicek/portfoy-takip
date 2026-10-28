@@ -137,6 +137,8 @@
   .linkcell .ph { color: var(--input-fg); font-style: italic; flex: 1; opacity: .85; }
   .linkcell .ed { margin-left: auto; border: 0; background: none; cursor: pointer; color: #6b7a99; padding: 2px 4px; border-radius: 4px; }
   .linkcell .ed:hover { background: rgba(31,56,100,.08); }
+  .broker-row .linkcell { overflow: hidden; }
+  .broker-row .linkcell a { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 
   /* ---------- Not balonu ---------- */
   .tip-i {
@@ -210,13 +212,11 @@
   .badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 600; background: #e6f4ea; color: #1e6b34; }
   .badge.cf-neg { background: #fde9e7; }
 
-  .broker-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 28px; }
   .comm-default { max-width: 320px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--line-2); }
   .tile-in .in { margin-top: 6px; }
   .tile-in .in input { height: 40px; font-size: 18px; font-weight: 650; }
-  .broker-grid.one { grid-template-columns: minmax(0, 1fr); max-width: 50%; }
   .empty-note { margin: 0; color: var(--muted); }
-  .broker-row { display: grid; grid-template-columns: 28px minmax(0, 1.6fr) minmax(0, 1fr) 76px 32px; gap: 8px; align-items: center; padding: 5px 0; }
+  .broker-row { display: grid; grid-template-columns: 28px minmax(0, 1.3fr) 170px 84px minmax(0, 1.7fr) 32px; gap: 12px; align-items: center; padding: 5px 0; }
   .broker-row.head { font-size: 12px; color: var(--muted); font-weight: 600; }
   .broker-row .idx { color: var(--muted); font-size: 12px; text-align: center; }
   .chip { display: inline-block; padding: 2px 8px; border-radius: 6px; background: var(--calc); font-size: 12.5px; font-variant-numeric: tabular-nums; text-align: right; min-width: 64px; }
@@ -348,8 +348,7 @@
   .toast button { background: none; border: 0; color: #8ab4f8; cursor: pointer; font-weight: 700; }
 
   @media (max-width: 900px) {
-    .grid-2, .grid-2e, .broker-grid { grid-template-columns: minmax(0, 1fr); }
-    .broker-grid > div + div .broker-row.head { display: none; }
+    .grid-2, .grid-2e { grid-template-columns: minmax(0, 1fr); }
     .comm-default { max-width: none; }
     .rb-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   }
@@ -676,7 +675,7 @@ var Engine = (function () {
 
   // ---------- Varsayılan veriler (xlsx'teki değerler) ----------
   function defaults() {
-    var brokers = [{ name: 'Kurum 1', rate: null }, { name: 'Kurum 2', rate: null }, { name: 'Kurum 3', rate: null }];
+    var brokers = [{ name: 'Kurum 1', rate: null, link: '' }, { name: 'Kurum 2', rate: null, link: '' }, { name: 'Kurum 3', rate: null, link: '' }];
     return {
       version: 1,
       settings: { defComm: 0.002, threshold: 0.05 },
@@ -714,7 +713,7 @@ var Engine = (function () {
     }
     // Kurumlar serbest liste; eski 8 yuvalı kayıtlardaki boş yuvalar atlanır
     if (Array.isArray(o.brokers)) d.brokers = o.brokers.filter(function (b) { return b && str(b.name).trim() !== ''; })
-      .map(function (b) { return { name: str(b.name), rate: numOrNull(b.rate) }; });
+      .map(function (b) { return { name: str(b.name), rate: numOrNull(b.rate), link: str(b.link) }; });
     if (Array.isArray(o.assets)) d.assets.forEach(function (a, i) {
       var s = o.assets[i]; if (!s) return;
       if ('target' in s) a.target = numOrNull(s.target);
@@ -1238,26 +1237,23 @@ var Engine = (function () {
     ], { flush: true });
 
     // Aracı kurumlar ve komisyon: serbest liste (hücreler 1. tablonun B4 ve F/G/H sütunları; 8'den fazlası aşağı uzar)
-    var brokerCol = function (from, to) {
-      var col = [h('div', { class: 'broker-row head' }, [h('span'), h('span', { text: 'Kurum adı' }), h('span', { text: 'Komisyon oranı' }), h('span', { text: 'Kullanılan', style: 'text-align:right' }), h('span')])];
-      s.brokers.slice(from, to).forEach(function (b, k) {
-        var i = from + k, r = 4 + i;
-        col.push(h('div', { class: 'broker-row' }, [
-          h('span', { class: 'idx', text: String(i + 1) }),
-          inp('1!F' + r, bind(b, 'name', 'text', { ph: 'Kurum adı', label: 'Kurum ' + (i + 1) + ' adı' })),
-          inp('1!G' + r, bind(b, 'rate', 'pct', { f: F.pc2, ph: 'Varsayılan', label: 'Kurum ' + (i + 1) + ' komisyon oranı' }), 'r'),
-          h('span', { style: 'text-align:right' }, [out('1!H' + r, F.pc2, 'chip')]),
-          h('button', { type: 'button', class: 'del', title: 'Kurumu sil', 'aria-label': (b.name || 'Kurum ' + (i + 1)) + ' kurumunu sil', 'data-broker-del': String(i), onclick: function () { delBroker(i); } }, [trash()])
-        ]));
-      });
-      return h('div', null, col);
-    };
+    var brokerRows = [h('div', { class: 'broker-row head' }, [h('span'), h('span', { text: 'Kurum adı' }), h('span', { text: 'Komisyon oranı' }), h('span', { text: 'Kullanılan', style: 'text-align:right' }), h('span', { text: 'Link' }), h('span')])];
+    s.brokers.forEach(function (b, i) {
+      var r = 4 + i;
+      brokerRows.push(h('div', { class: 'broker-row' }, [
+        h('span', { class: 'idx', text: String(i + 1) }),
+        inp('1!F' + r, bind(b, 'name', 'text', { ph: 'Kurum adı', label: 'Kurum ' + (i + 1) + ' adı' })),
+        inp('1!G' + r, bind(b, 'rate', 'pct', { f: F.pc2, ph: 'Varsayılan', label: 'Kurum ' + (i + 1) + ' komisyon oranı' }), 'r'),
+        h('span', { style: 'text-align:right' }, [out('1!H' + r, F.pc2, 'chip')]),
+        inp('bk-link-' + i, bind(b, 'link', 'link')),
+        h('button', { type: 'button', class: 'del', title: 'Kurumu sil', 'aria-label': (b.name || 'Kurum ' + (i + 1)) + ' kurumunu sil', 'data-broker-del': String(i), onclick: function () { delBroker(i); } }, [trash()])
+      ]));
+    });
     painter(function () {
       document.querySelectorAll('[data-k^="1!H"]').forEach(function (el) { el.style.visibility = el.textContent ? '' : 'hidden'; });
     });
-    var half = Math.ceil(s.brokers.length / 2);
     var brokerList = s.brokers.length
-      ? h('div', { class: 'broker-grid' + (s.brokers.length < 2 ? ' one' : '') }, [brokerCol(0, half), s.brokers.length > 1 ? brokerCol(half, s.brokers.length) : null])
+      ? h('div', { class: 'broker-list' }, brokerRows)
       : h('p', { class: 'empty-note', text: 'Henüz aracı kurum yok. “＋ Aracı kurum ekle” ile ekle; kayıtlarda kurumu seçince oranı otomatik uygulanır.' });
     var addBroker = h('button', { type: 'button', class: 'btn', 'data-broker-add': '1', onclick: brokerDialog }, ['＋ Aracı kurum ekle']);
     var commission = card('🏦 Aracı kurumlar ve komisyon', 'Kayıtta kurumu seçince oranı otomatik uygulanır. Öncelik: işleme özel oran → kurum oranı → varsayılan oran.', [
@@ -1269,7 +1265,7 @@ var Engine = (function () {
       brokerList
     ], {
       action: addBroker,
-      note: "Kullandığın aracı kurumları ekle; sayı sınırı yok. Oranı boş bırakırsan varsayılan oran kullanılır." });
+      note: "Kullandığın aracı kurumları ekle; sayı sınırı yok. Oranı boş bırakırsan varsayılan oran kullanılır. Link isteğe bağlı (örn. kurumun giriş sayfası)." });
 
     var defs = h('dl', { class: 'defs' });
     [['Tarih', 'Alım günü (gg.aa.yyyy). Her alım ayrı satır; aynı ay birden fazla olabilir.'],
@@ -1368,6 +1364,7 @@ var Engine = (function () {
   function brokerDialog() {
     var opener = document.activeElement;
     var name = h('input', { id: 'bd-name', type: 'text', placeholder: 'örn. Midas', autocomplete: 'off' });
+    var link = h('input', { id: 'bd-link', type: 'text', placeholder: 'https://…', autocomplete: 'off' });
     var rate = h('input', { id: 'bd-rate', type: 'text', placeholder: 'örn. 0,15 (boşsa varsayılan oran)', inputmode: 'decimal', autocomplete: 'off' });
     var err = h('div', { class: 'dlg-err', role: 'alert' });
     var form = h('form', { class: 'dlg', novalidate: 'novalidate' }, [
@@ -1384,6 +1381,10 @@ var Engine = (function () {
           h('label', { class: 'lab', for: 'bd-rate' }, ['Komisyon oranı (%)', h('span', { class: 'opt', text: ' (isteğe bağlı)' })]),
           h('div', { class: 'in' }, [rate])
         ]),
+        h('div', { class: 'field' }, [
+          h('label', { class: 'lab', for: 'bd-link' }, ['Link', h('span', { class: 'opt', text: ' (isteğe bağlı)' })]),
+          h('div', { class: 'in' }, [link])
+        ]),
         err
       ]),
       h('div', { class: 'dlg-f' }, [
@@ -1399,7 +1400,9 @@ var Engine = (function () {
       if (state.brokers.some(function (b) { return String(b.name == null ? '' : b.name).trim().toLowerCase() === nm.toLowerCase(); })) { err.textContent = '“' + nm + '” zaten listede.'; name.focus(); return; }
       var r = parseNumTR(rate.value);
       if (r === undefined || (r != null && (r < 0 || r > 10))) { err.textContent = 'Komisyon oranı 0 ile 10 arasında bir sayı olmalı (örn. 0,15).'; rate.focus(); return; }
-      state.brokers.push({ name: nm, rate: r == null ? null : Number((r / 100).toPrecision(15)) });
+      var ln = link.value.trim();
+      if (ln && !linkHref(ln)) { err.textContent = 'Link http://, https:// ya da www. ile başlamalı.'; link.focus(); return; }
+      state.brokers.push({ name: nm, rate: r == null ? null : Number((r / 100).toPrecision(15)), link: ln });
       close(false);
       changed(true);
       var back = document.querySelector('[data-broker-add]');

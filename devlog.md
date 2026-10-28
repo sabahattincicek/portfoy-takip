@@ -5,6 +5,12 @@
 
 ---
 
+## 2026-10-28 15:14 — Aracı kurum listesi tek sütun + link
+- Kurum listesi iki sütun yerine tek sütun (Kurum adı · Komisyon oranı · Kullanılan · Link · sil).
+- Her kuruma isteğe bağlı link: "Aracı kurum ekle" penceresinde yeni alan (http/https/www doğrulamalı), listede satır içinde ✎ ile düzenlenir, tıklanınca yeni sekmede açılır; uzun link "…" ile kısalır.
+- Veri: kurum kaydına `link` alanı eklendi; eski kayıtlarda yoksa boş kabul edilir. Motor değişmedi.
+- Test: kurum listesi 24/24; kaynak 22/22, genel durum 16/16, grafik 15/15; `ui_test2` önceki çalıştırmayla aynı (47/65, bilinen hatalar).
+
 ## 2026-10-28 14:54 — Aracı kurumlar serbest liste oldu (8 yuva kaldırıldı)
 - Kurum kartında artık yalnızca eklenen kurumlar görünüyor; boş "Kurum ekle" yuvaları yok, sayı sınırı yok. "＋ Aracı kurum ekle" listenin sonuna ekler; her satırda sil düğmesi (Geri al ile). Hiç kurum yoksa kısa yönlendirme metni.
 - Kurum silinirken o kurumu kullanan kayıtlarda kurum boşaltılır ("Kurum seçilmemiş"e düşer) ki özet toplamları ve "Toplam ödenen" doğru kalsın; Geri al kayıtları da geri koyar.
