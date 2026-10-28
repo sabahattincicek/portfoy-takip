@@ -5,6 +5,14 @@
 
 ---
 
+## 2026-10-28 15:41 — Aylık kayıtlar: ekle / düzenle pencereden
+- Aylık kayıtlar tablosu artık salt okunur: TÜFE ve 5 varlık değeri metin olarak (boşsa "—"); sonda sağa sabitlenmiş ✎ Düzenle ve (yalnızca dolu aylarda) temizle düğmesi.
+- "＋ Kayıt ekle" (üstte ve altta) → pencere: Ay seçimi (en yeni üstte; varsayılan = kaydı olmayan en son ay, dolu aylar "(kayıtlı)"), Aylık TÜFE %, 5 varlık değeri (TL). Dolu bir ay seçilirse değerleri yüklenir ve "kaydedince güncellenir" uyarısı çıkar. ✎ aynı pencereyi ay sabit olarak açar.
+- Doğrulama: TÜFE −50…+50, değerler ≥ 0, en az bir alan dolu. Temizle → o ayın girdileri boşaltılır (ay satırı kalır, aylar otomatik), Geri al ile döner.
+- "Nasıl kullanılır — Aylık takip" kartı Aylık kayıtların üstüne taşındı; ipucu metinleri pencere akışına göre güncellendi.
+- Pencere Tab döngüsüne select alanları eklendi (`openDialog`, alım penceresine de yarar). Motor ve veri biçimi (`monthly[n] = {cpi, v}`) değişmedi.
+- Test: headless Edge'de aylık kayıt testi 27/27 (ekle, varsayılan ay, doğrulamalar, dolu ay yükleme, düzenle, Esc/X, temizle + geri al, kayıt içeriği); ekran görüntüleriyle pencere ve tablo kontrol edildi.
+
 ## 2026-10-28 15:36 — Aylık takip: Hızlı linkler kartı kaldırıldı
 - "🔗 Hızlı linkler" kartı (TÜFE kaynağı / Aracı kurum / Diğer) Aylık takip sekmesinden çıkarıldı; "Güncel durum" kartı artık tam genişlik, 3 sütunlu (dar ekranda otomatik sarar).
 - Veri tarafı dokunulmadı: `links3` alanı state'te ve JSON dışa/içe aktarmada aynen duruyor (geriye dönük uyum). Motor değişmedi.

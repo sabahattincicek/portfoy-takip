@@ -181,6 +181,9 @@
   .sticky2 { position: sticky; left: 64px; z-index: 2; background: #fff; box-shadow: 1px 0 0 var(--line); }
   .t th.sticky2 { background: #f8f9fb; z-index: 3; }
   .t tbody tr:hover td.sticky, .t tbody tr:hover td.sticky2 { background: #fafbfd; }
+  .sticky-r { position: sticky; right: 0; z-index: 2; background: #fff; box-shadow: -1px 0 0 var(--line); }
+  .t th.sticky-r { background: #f8f9fb; z-index: 3; }
+  .t tbody tr:hover td.sticky-r { background: #fafbfd; }
   .rownum { color: var(--muted); font-size: 12px; text-align: center; width: 40px; }
 
   .del { border: 0; background: none; cursor: pointer; color: #a0a7b4; width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; }
@@ -277,6 +280,7 @@
   .src-link { color: #1a56c4; text-decoration: none; word-break: break-all; font-size: 13.5px; }
   .src-link:hover { text-decoration: underline; }
   .src-act { display: flex; gap: 2px; justify-content: flex-end; }
+  .del-ph { display: inline-block; width: 30px; }
   .ibtn { border: 0; background: none; cursor: pointer; color: #8a93a3; width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; }
   .ibtn:hover { color: var(--navy); background: var(--navy-soft); }
 
@@ -1370,7 +1374,7 @@ var Engine = (function () {
     ov.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') { e.preventDefault(); close(true); return; }
       if (e.key !== 'Tab') return;
-      var fs = form.querySelectorAll('input, textarea, button'), a = fs[0], z = fs[fs.length - 1];
+      var fs = form.querySelectorAll('input, select, textarea, button:not([disabled])'), a = fs[0], z = fs[fs.length - 1];
       if (e.shiftKey && document.activeElement === a) { e.preventDefault(); z.focus(); }
       else if (!e.shiftKey && document.activeElement === z) { e.preventDefault(); a.focus(); }
     });
@@ -1561,6 +1565,100 @@ var Engine = (function () {
   }
   function isBlankTx(t) { return !t.date && !t.asset && !t.instr && !t.broker && t.paid == null && t.comm == null && !t.note; }
 
+  // ---------- Aylık kayıt ekle / düzenle penceresi (ay = 3. tablo satırı) ----------
+  function monthHasData(n) {
+    var md = state.monthly[n];
+    return !!md && (md.cpi != null || (md.v || []).some(function (x) { return x != null; }));
+  }
+  function monthLabel(n) { return 'Ay ' + n + ' · ' + fmt(V['3!B' + (21 + n)], F.mon); }
+  function monthDialog(n) {
+    var editing = n != null, months = V.__months || 0, opener = document.activeElement, f = {};
+    if (!editing) {
+      // Varsayılan: kaydı olmayan en son ay; hepsi doluysa son ay
+      n = months;
+      for (var k = months; k >= 1; k--) if (!monthHasData(k)) { n = k; break; }
+    }
+    function input(key, ph) {
+      var el = h('input', { id: 'md-' + key, type: 'text', placeholder: ph, autocomplete: 'off', inputmode: 'decimal' });
+      f[key] = el; return el;
+    }
+    function field(key, label, ctl, hint) {
+      return h('div', { class: 'field' }, [
+        h('label', { class: 'lab', for: 'md-' + key }, label), h('div', { class: 'in' }, [ctl]),
+        hint ? h('span', { class: 'hint', text: hint }) : null
+      ]);
+    }
+    var mon = h('select', { id: 'md-mon' });
+    for (var m = months; m >= 1; m--) mon.appendChild(h('option', { value: String(m), text: monthLabel(m) + (monthHasData(m) ? ' (kayıtlı)' : '') }));
+    mon.value = String(n);
+    if (editing) mon.disabled = true;
+    var info = h('span', { class: 'hint' });
+    var assetFields = state.assets.map(function (as, a) {
+      return field('v' + a, [h('span', { class: 'dot', style: 'background:' + COLORS[a] + ';margin-right:6px' }), as.name + ' değeri (TL)'], input('v' + a, '—'));
+    });
+    var err = h('div', { class: 'dlg-err', role: 'alert' });
+    var form = h('form', { class: 'dlg wide', novalidate: 'novalidate' }, [
+      h('div', { class: 'dlg-h' }, [
+        h('h3', { id: 'md-title', text: editing ? monthLabel(n) + ' kaydını düzenle' : 'Yeni aylık kayıt' }),
+        h('button', { type: 'button', class: 'dlg-x', 'aria-label': 'Kapat', text: '✕', onclick: function () { close(true); } })
+      ]),
+      h('div', { class: 'dlg-b dlg-grid' }, [
+        h('div', { class: 'field' }, [h('label', { class: 'lab', for: 'md-mon' }, ['Ay', h('span', { class: 'req', text: ' *' })]), h('div', { class: 'in' }, [mon]), info]),
+        field('cpi', ['Aylık TÜFE (%)'], input('cpi', 'örn. 2,5'), 'TÜİK’in açıkladığı aylık % değişim.')
+      ].concat(assetFields, [
+        h('div', { class: 'span2 hint', text: 'Boş bıraktığın alanlar kayıtsız sayılır. Değerleri aracı kurum ekranındaki güncel TL karşılığıyla gir.' }),
+        h('div', { class: 'span2' }, [err])
+      ])),
+      h('div', { class: 'dlg-f' }, [
+        h('button', { type: 'button', class: 'btn light', text: 'İptal', onclick: function () { close(true); } }),
+        h('button', { type: 'submit', class: 'btn', 'data-m-save': '1', text: editing ? 'Kaydet' : 'Kaydı ekle' })
+      ])
+    ]);
+    // Seçili ayın mevcut değerleri alanlara yüklenir (dolu bir ay seçilirse ekleme = güncelleme)
+    function load() {
+      var md = state.monthly[+mon.value] || { cpi: null, v: [] };
+      f.cpi.value = editNum(md.cpi, true);
+      for (var a = 0; a < 5; a++) f['v' + a].value = md.v[a] == null ? '' : fmt(md.v[a], '#,##0.00');
+      info.textContent = !editing && monthHasData(+mon.value) ? 'Bu ayın kaydı var; kaydedince güncellenir.' : '';
+      err.textContent = '';
+    }
+    mon.addEventListener('change', load);
+    load();
+    var close = openDialog(form, 'md-title', editing ? f.cpi : mon, opener);
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var fail = function (msg, el) { err.textContent = msg; el.focus(); };
+      var cpi = parseNumTR(f.cpi.value);
+      if (cpi === undefined || (cpi != null && (cpi < -50 || cpi > 50))) return fail('TÜFE −50 ile +50 arasında bir sayı olmalı (örn. 2,5).', f.cpi);
+      var v = [];
+      for (var a = 0; a < 5; a++) {
+        var x = parseNumTR(f['v' + a].value);
+        if (x === undefined || (x != null && x < 0)) return fail(state.assets[a].name + ' değeri 0 veya daha büyük bir sayı olmalı (örn. 12.500,75).', f['v' + a]);
+        v.push(x);
+      }
+      if (cpi == null && v.every(function (x) { return x == null; })) return fail('En az bir alanı doldur (TÜFE ya da bir varlık değeri).', f.cpi);
+      var mn = +mon.value, was = monthHasData(mn);
+      state.monthly[mn] = { cpi: cpi == null ? null : Number((cpi / 100).toPrecision(15)), v: v };
+      close(false);
+      changed(true);
+      var back = document.querySelector(editing ? '[data-m-edit="' + mn + '"]' : '[data-m-add]');
+      if (back) back.focus();
+      toast(monthLabel(mn) + (was ? ' kaydı güncellendi.' : ' kaydı eklendi.'));
+    });
+  }
+  var lastMonth = null;
+  function delMonth(n) {
+    lastMonth = { n: n, md: state.monthly[n] };
+    state.monthly[n] = { cpi: null, v: [] };
+    changed(true);
+    toast(monthLabel(n) + ' kaydı temizlendi.', 'Geri al', function () {
+      if (!lastMonth) return;
+      state.monthly[lastMonth.n] = lastMonth.md;
+      lastMonth = null;
+      changed(true);
+    });
+  }
+
   // =====================================================================
   // 3 — AYLIK TAKİP
   // =====================================================================
@@ -1586,53 +1684,56 @@ var Engine = (function () {
     } else {
       var names = s.assets.map(function (a, i) { return out('3!' + 'DEFGH'[i] + '21'); });
       var thead = h('thead', null, [
-        h('tr', null, [h('th', { class: 'sticky', colspan: '1' }), h('th', { class: 'sticky2' }), h('th', { class: 'grp', colspan: '6', text: 'Senin girdilerin' }), h('th', { class: 'grp calc', colspan: '12', text: 'Otomatik hesap' })]),
+        h('tr', null, [h('th', { class: 'sticky', colspan: '1' }), h('th', { class: 'sticky2' }), h('th', { class: 'grp', colspan: '6', text: 'Senin girdilerin' }), h('th', { class: 'grp calc', colspan: '12', text: 'Otomatik hesap' }), h('th', { class: 'sticky-r' })]),
         h('tr', null, [
           h('th', { class: 'sticky ctr', text: 'Ay no', style: 'width:64px' }), h('th', { class: 'sticky2', text: 'Ay' }),
           h('th', { class: 'num wrap', text: 'Aylık TÜFE' })
         ].concat(names.map(function (n, i) { return h('th', { class: 'num wrap cat', style: catOf(i) }, [n]); }))
           .concat(['Toplam değer', 'Bu ay yatırılan', 'Bu ay komisyon', 'Kümülatif yatırılan', 'Kümülatif komisyon', 'Ay başı enfl. çarpanı', 'Ay sonu enfl. çarpanı',
-            'Reel anapara', 'Reel değer', 'Reel kazanç / kayıp', 'Nominal kazanç / kayıp', 'Aylık getiri'].map(function (t) { return h('th', { class: 'calc num wrap', text: t }); })))
+            'Reel anapara', 'Reel değer', 'Reel kazanç / kayıp', 'Nominal kazanç / kayıp', 'Aylık getiri'].map(function (t) { return h('th', { class: 'calc num wrap', text: t }); }))
+          .concat([h('th', { class: 'sticky-r', 'aria-label': 'İşlemler' })]))
       ]);
       var tb = h('tbody');
-      for (var n = 1; n <= months; n++) {
-        var r = 21 + n, md = s.monthly[n] || (s.monthly[n] = { cpi: null, v: [] });
+      var dash = function (v, f) { return v == null ? h('span', { class: 'muted', text: '—' }) : h('span', { text: fmt(v, f) }); };
+      for (var n = 1; n <= months; n++) (function (n) {
+        var r = 21 + n, md = s.monthly[n] || { cpi: null, v: [] }, has = monthHasData(n);
         var cells = [
           h('td', { class: 'sticky ctr' }, [out('3!A' + r, null, 'b')]),
-          h('td', { class: 'sticky2', style: 'min-width:120px' }, [out('3!B' + r, F.mon)]),
-          h('td', { style: 'min-width:96px' }, [inp('3!C' + r, bind(md, 'cpi', 'pct', {
-            f: F.pc2, ph: '%', label: 'Ay ' + n + ' TÜFE',
-            check: function (v) { return v != null && (v < -0.5 || v > 0.5) ? 'TÜFE −%50 ile +%50 arasında olmalı' : ''; }
-          }), 'r')])
+          h('td', { class: 'sticky2 nowrap', style: 'min-width:120px' }, [out('3!B' + r, F.mon)]),
+          h('td', { class: 'num' }, [dash(md.cpi, F.pc2)])
         ];
-        for (var a = 0; a < 5; a++) cells.push(h('td', { class: 'cat', style: catOf(a) + ';min-width:130px' }, [inp('3!' + 'DEFGH'[a] + r, bind(md.v, a, 'money', {
-          f: F.tlp, ph: '—', label: 'Ay ' + n + ' ' + s.assets[a].name + ' değeri',
-          check: function (v) { return v != null && v < 0 ? 'Değer 0 veya daha büyük olmalı' : ''; }
-        }), 'r')]));
+        for (var a = 0; a < 5; a++) cells.push(h('td', { class: 'cat num', style: catOf(a) + ';min-width:110px' }, [dash(md.v[a], F.tlp)]));
         cells.push(h('td', { class: 'calc num' }, [out('3!I' + r, F.tl, 'b')]));
         'JKLM'.split('').forEach(function (c) { cells.push(h('td', { class: 'calc num' }, [out('3!' + c + r, F.tl)])); });
         cells.push(h('td', { class: 'calc num' }, [out('3!N' + r, F.n4)]), h('td', { class: 'calc num' }, [out('3!O' + r, F.n4)]));
         cells.push(h('td', { class: 'calc num' }, [out('3!P' + r, F.tl)]), h('td', { class: 'calc num' }, [out('3!Q' + r, F.tl)]));
         cells.push(h('td', { class: 'calc num' }, [out('3!R' + r, F.tl, '', cfSign)]), h('td', { class: 'calc num' }, [out('3!S' + r, F.tl, '', cfSign)]),
           h('td', { class: 'calc num' }, [out('3!T' + r, F.p2, '', cfSign)]));
+        cells.push(h('td', { class: 'sticky-r' }, [h('span', { class: 'src-act' }, [
+          h('button', { type: 'button', class: 'ibtn', title: 'Düzenle', 'aria-label': 'Ay ' + n + ' kaydını düzenle', 'data-m-edit': String(n), onclick: function () { monthDialog(n); } }, [pencil()]),
+          has ? h('button', { type: 'button', class: 'del', title: 'Kaydı temizle', 'aria-label': 'Ay ' + n + ' kaydını temizle', 'data-m-del': String(n), onclick: function () { delMonth(n); } }, [trash()])
+            : h('span', { class: 'del-ph', 'aria-hidden': 'true' })
+        ])]));
         tb.appendChild(h('tr', null, cells));
-      }
+      })(n);
       body = h('div', { class: 'tscroll' }, [h('table', { class: 't' }, [thead, tb])]);
     }
-    var table = card('📅 Aylık kayıtlar', 'Ay 1 = ilk yatırımının ayı; her yeni ay kendiliğinden eklenir (120 aya kadar). Sadece mavi alanları doldur: TÜFE ve varlık değerleri.', [body], { flush: true });
+    var addBtn = function (cls) { return h('button', { type: 'button', class: 'btn ' + (cls || ''), 'data-m-add': '1', onclick: function () { monthDialog(null); } }, ['＋ Kayıt ekle']); };
+    var table = card('📅 Aylık kayıtlar', 'Ay 1 = ilk yatırımının ayı; her yeni ay kendiliğinden eklenir (120 aya kadar). Eklemek için ＋ Kayıt ekle, değiştirmek için ✎. Gri sütunlar otomatik hesaplanır.', [body],
+      months ? { flush: true, action: addBtn(), foot: addBtn('light') } : { flush: true });
 
     var g = guide('Nasıl kullanılır — Aylık takip', [
       'Bu tablo İşlem kaydı sekmesine ilk girişini yaptığında başlar. Ay 1 = ilk yatırımının ayı; her yeni ay kendiliğinden eklenir (120 aya kadar).',
-      "TÜFE: TÜİK her ayın 3'ü civarı bir önceki ayın enflasyonunu açıklar. O ayın satırına aylık % değişimi yaz (örn. %2,5 için 2,5).",
-      'Değerleme: Aracı kurum ekranındaki her varlığın güncel TL değerini o ayın satırına yaz. Ayın istediğin gününde yapabilirsin.',
+      "TÜFE: TÜİK her ayın 3'ü civarı bir önceki ayın enflasyonunu açıklar. O ayın kaydına aylık % değişimi yaz (örn. %2,5 için 2,5).",
+      'Değerleme: ＋ Kayıt ekle ile ayı seç, aracı kurum ekranındaki her varlığın güncel TL değerini yaz. Ayın istediğin gününde yapabilirsin. Sonradan değiştirmek için satırdaki ✎.',
       'Bu ay yatırılan / komisyon ve kümülatifleri (otomatik): O ay kayıt sayfasına girdiğin alımlar ve komisyonlar.',
       'Enflasyon çarpanları ve reel sütunlar (otomatik): Reel hesaplar, TÜFE girilen aylar için yapılır. Reel kazanç > 0 ise enflasyonu yeniyorsun demektir.',
       'Aylık getiri: O ayki gerçek getirin (yeni yatırımlar hariç). Önceki ay değerlemesi yoksa boş kalır.',
-      'Mavi alanlar = senin girdilerin. Gri sütunlar formüldür.'
+      'TÜFE ve varlık değeri sütunları senin girdilerin. Gri sütunlar formüldür.'
     ], ['⚠ İlk yatırımından daha eski tarihli bir kayıt eklersen ay numaraları kayar; girdiğin TÜFE ve değerleri yeni satırlarına taşıman gerekir.']);
 
     return [pageHead('Aylık takip ve gerçekleşen performans', 'Aylar ilk yatırımının ayından başlar ve bugüne kadar kendiliğinden uzar. Ay sonunda TÜFE’yi ve varlık değerlerini gir.'),
-      h('div', { class: 'stack' }, [tiles, details, table, g])];
+      h('div', { class: 'stack' }, [tiles, details, g, table])];
   }
 
   // =====================================================================
