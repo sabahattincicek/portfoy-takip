@@ -1,0 +1,39 @@
+{
+  "settings": { "defComm": 0.002, "threshold": 0.05 },
+  "brokers": [
+    { "name": "Kurum 1", "rate": 0.0015 },
+    { "name": "Kurum 2", "rate": null },
+    { "name": "Kurum 3", "rate": 0.001 },
+    { "name": "", "rate": null }, { "name": "", "rate": null }, { "name": "", "rate": null },
+    { "name": "", "rate": null }, { "name": "", "rate": null }
+  ],
+  "tx": [
+    { "date": "2026-04-10", "asset": "Yabancı Hisse", "instr": "SPY", "broker": "Kurum 1", "paid": 6000, "comm": null, "note": "ilk alım" },
+    { "date": "2026-04-10", "asset": "BIST 100", "instr": "ZPTKM.F", "broker": "Kurum 2", "paid": 5000, "comm": null, "note": "" },
+    { "date": "2026-04-12", "asset": "Kıymetli Maden", "instr": "Gram Altın", "broker": "Kurum 2", "paid": 4000, "comm": null, "note": "" },
+    { "date": "2026-04-15", "asset": "Sabit Getiri", "instr": "PPF", "broker": "Kurum 3", "paid": 3000, "comm": null, "note": "" },
+    { "date": "2026-04-20", "asset": "Kripto", "instr": "BTC", "broker": "", "paid": 2000, "comm": 0.005, "note": "kripto borsası" },
+    { "date": "2026-05-08", "asset": "Yabancı Hisse", "instr": "QQQ", "broker": "Kurum 1", "paid": 3000, "comm": null, "note": "" },
+    { "date": "2026-05-08", "asset": "BIST 100", "instr": "ZJB", "broker": "Kurum 2", "paid": 2500, "comm": null, "note": "" },
+    { "date": "2026-05-20", "asset": "Kıymetli Maden", "instr": "Gram Gümüş", "broker": "Kurum 2", "paid": 2000, "comm": null, "note": "" },
+    { "date": "2026-06-09", "asset": "Yabancı Hisse", "instr": "SPY", "broker": "Kurum 1", "paid": 3000, "comm": null, "note": "" },
+    { "date": "2026-06-09", "asset": "Sabit Getiri", "instr": "DİBS", "broker": "Kurum 3", "paid": 2500, "comm": null, "note": "" },
+    { "date": "2026-06-25", "asset": "Kripto", "instr": "ETH", "broker": "", "paid": 1000, "comm": 0.005, "note": "" },
+    { "date": "2026-07-07", "asset": "BIST 100", "instr": "ZPTKM.F", "broker": "Kurum 2", "paid": 3000, "comm": null, "note": "" },
+    { "date": "2026-07-07", "asset": "Kıymetli Maden", "instr": "Gram Altın", "broker": "Kurum 2", "paid": 2000, "comm": null, "note": "" },
+    { "date": "2026-08-11", "asset": "Yabancı Hisse", "instr": "QQQ", "broker": "Kurum 1", "paid": 4000, "comm": null, "note": "prim parası" },
+    { "date": "2026-08-11", "asset": "Sabit Getiri", "instr": "PPF", "broker": "Kurum 3", "paid": 2000, "comm": null, "note": "" },
+    { "date": "2026-09-08", "asset": "BIST 100", "instr": "ZJB", "broker": "Kurum 2", "paid": 2500, "comm": null, "note": "" },
+    { "date": "2026-09-08", "asset": "Kripto", "instr": "BTC", "broker": "", "paid": 1500, "comm": 0.005, "note": "" },
+    { "date": "2026-10-06", "asset": "Yabancı Hisse", "instr": "SPY", "broker": "Kurum 1", "paid": 3500, "comm": null, "note": "" },
+    { "date": "2026-10-06", "asset": "Kıymetli Maden", "instr": "Gram Altın", "broker": "Kurum 2", "paid": 2000, "comm": null, "note": "" }
+  ],
+  "monthly": {
+    "1": { "cpi": 0.0302, "v": [6080, 5050, 4110, 3015, 1930] },
+    "2": { "cpi": 0.0153, "v": [9250, 7480, 6240, 3050, 2180] },
+    "3": { "cpi": 0.0137, "v": [12610, 7300, 6420, 5620, 3420] },
+    "4": { "cpi": 0.0206, "v": [12980, 10650, 8510, 5710, 3150] },
+    "5": { "cpi": 0.0204, "v": [17300, 10900, 8890, 7780, 3600] },
+    "6": { "cpi": 0.0285, "v": [17650, 13700, 9150, 7900, 2200] }
+  }
+}
