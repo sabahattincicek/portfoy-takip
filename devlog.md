@@ -5,6 +5,13 @@
 
 ---
 
+## 2026-10-28 14:48 — "Aracı kurum ekle" penceresi, daha geniş masaüstü düzeni
+- Aracı kurumlar ve komisyon kartına "＋ Aracı kurum ekle" düğmesi → pencere: Kurum adı (zorunlu), komisyon oranı % (isteğe bağlı, 0–10; boşsa varsayılan oran).
+- Yeni kurum ilk boş kurum yuvasına yazılır (yapı 8 yuvalı kalır; motor ve JSON biçimi değişmedi). Aynı ad (büyük/küçük harf duyarsız) reddedilir; 8 yuva doluysa düğme pasif ve nedenini söylüyor, bir yuva boşalınca yeniden etkin.
+- Kaynak penceresindeki ortak davranış (Esc / dışarı tıklama, Tab odak döngüsü) `openDialog` yardımcı işlevine alındı; kaynak ve kurum pencereleri bunu kullanıyor.
+- Masaüstü içerik genişliği 1320 → 1440 px (yan boşluklar biraz daha kullanılıyor).
+- Test: kurum penceresi 15/15; kaynak 22/22, genel durum 16/16, grafik 15/15. `ui_test2` 48/65, ama önceki commit'te de aynı 17 hata var (bu değişiklikten değil; 3. ve 4. sekme hücreleri ve kayıt kontrolleri, ayrıca bakılmalı).
+
 ## 2026-10-28 14:40 — İşlem kaydı: Alım kayıtları kartı en alta
 - İşlem kaydı sekmesinde kart sırası: gösterge kutuları → Varlık / Aracı kurum özetleri → Aracı kurumlar ve komisyon → Sütunlar ve ipuçları → Alım kayıtları (önceden alım kayıtları kutuların hemen altındaydı).
 - Yalnızca sıralama değişti; motor ve veri yapısı aynı.

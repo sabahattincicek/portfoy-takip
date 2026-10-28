@@ -39,7 +39,7 @@
     background: linear-gradient(135deg, var(--navy) 0%, var(--navy-2) 100%);
     color: #fff;
   }
-  .top-inner { max-width: 1320px; margin: 0 auto; padding: 18px 16px 0; }
+  .top-inner { max-width: 1440px; margin: 0 auto; padding: 18px 16px 0; }
   .brand-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
   .brand { display: flex; align-items: center; gap: 12px; }
   .brand-mark {
@@ -72,7 +72,7 @@
   .tab[aria-selected="true"] { background: var(--bg); color: var(--navy); }
   .tab[aria-selected="true"] .num { background: var(--navy); color: #fff; }
 
-  main { max-width: 1320px; margin: 0 auto; padding: 20px 16px 48px; }
+  main { max-width: 1440px; margin: 0 auto; padding: 20px 16px 48px; }
   .page-head { margin: 4px 0 18px; }
   .page-head h2 { margin: 0 0 4px; font-size: 22px; color: var(--navy); }
   .page-head p { margin: 0; color: var(--muted); max-width: 760px; }
@@ -187,6 +187,7 @@
   .btn:hover { background: var(--navy-2); }
   .btn.light { background: var(--navy-soft); color: var(--navy); }
   .btn.light:hover { background: #dbe3f1; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; background: var(--navy); }
   .card-foot { padding: 10px 20px 16px; }
 
   /* ---------- Dağılım çubuğu ---------- */
@@ -1245,6 +1246,12 @@ var Engine = (function () {
     painter(function () {
       document.querySelectorAll('[data-k^="1!H"]').forEach(function (el) { el.style.visibility = el.textContent ? '' : 'hidden'; });
     });
+    var addBroker = h('button', { type: 'button', class: 'btn', 'data-broker-add': '1', onclick: brokerDialog }, ['＋ Aracı kurum ekle']);
+    painter(function () {
+      var full = freeBroker() < 0;
+      addBroker.disabled = full;
+      addBroker.title = full ? '8 kurumun hepsi dolu; eklemek için birini boşalt.' : '';
+    });
     var commission = card('🏦 Aracı kurumlar ve komisyon', 'Kayıtta kurumu seçince oranı otomatik uygulanır. Öncelik: işleme özel oran → kurum oranı → varsayılan oran.', [
       h('div', { class: 'comm-default' }, [h('div', { class: 'field' }, [
         h('span', { class: 'lab' }, ['Varsayılan komisyon oranı', note("Aracı kurumunun işlem komisyonu. Kayıtta komisyon % boş bırakılırsa ve kurumun oranı yoksa bu oran kullanılır. Örnek değerdir, kendi oranını yaz.")]),
@@ -1252,7 +1259,9 @@ var Engine = (function () {
         h('span', { class: 'hint', text: 'Kurum ya da işlem oranı yoksa bu kullanılır.' })
       ])]),
       h('div', { class: 'broker-grid' }, [brokerCol(0, 4), brokerCol(4, 8)])
-    ], { note: "Kurum adlarını kendi kullandığın aracı kurumlarla değiştir (8'e kadar). Oranı boş bırakırsan varsayılan oran kullanılır." });
+    ], {
+      action: addBroker,
+      note: "Kurum adlarını kendi kullandığın aracı kurumlarla değiştir (8'e kadar). Oranı boş bırakırsan varsayılan oran kullanılır." });
 
     var defs = h('dl', { class: 'defs' });
     [['Tarih', 'Alım günü (gg.aa.yyyy). Her alım ayrı satır; aynı ay birden fazla olabilir.'],
@@ -1312,7 +1321,7 @@ var Engine = (function () {
         h('button', { type: 'submit', class: 'btn', 'data-src-save': '1', text: editing ? 'Kaydet' : 'Listeye ekle' })
       ])
     ]);
-    var ov = h('div', { class: 'dlg-ov', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'sd-title' }, [form]);
+    var close = openDialog(form, 'sd-title', f.a, opener);
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       var v = { a: f.a.value.trim(), b: f.b.value.trim(), c: f.c.value.trim(), d: f.d.value.trim() };
@@ -1325,20 +1334,75 @@ var Engine = (function () {
       if (back) back.focus();
       toast(editing ? 'Kaynak güncellendi.' : '“' + v.a + '” listeye eklendi.');
     });
-    ov.addEventListener('mousedown', function (e) { if (e.target === ov) close(true); });
-    ov.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') { e.preventDefault(); close(true); return; }
-      if (e.key !== 'Tab') return;
-      var fs = form.querySelectorAll('input, textarea, button'), first = fs[0], last = fs[fs.length - 1];
-      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-    });
+  }
+
+  // Ortak pencere kabuğu: Esc / dışarı tıklama kapatır, Tab odağı pencere içinde döner. Kapatma işlevini döndürür.
+  function openDialog(form, labelId, first, opener) {
+    var ov = h('div', { class: 'dlg-ov', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': labelId }, [form]);
     function close(refocus) {
       ov.remove(); document.body.classList.remove('dlg-open');
       if (refocus && opener && opener.focus) opener.focus();
     }
+    ov.addEventListener('mousedown', function (e) { if (e.target === ov) close(true); });
+    ov.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { e.preventDefault(); close(true); return; }
+      if (e.key !== 'Tab') return;
+      var fs = form.querySelectorAll('input, textarea, button'), a = fs[0], z = fs[fs.length - 1];
+      if (e.shiftKey && document.activeElement === a) { e.preventDefault(); z.focus(); }
+      else if (!e.shiftKey && document.activeElement === z) { e.preventDefault(); a.focus(); }
+    });
     document.body.appendChild(ov); document.body.classList.add('dlg-open');
-    f.a.focus();
+    first.focus();
+    return close;
+  }
+
+  // ---------- Aracı kurum ekle penceresi (ilk boş kurum yuvasına yazar; en fazla 8) ----------
+  function freeBroker() {
+    for (var i = 0; i < state.brokers.length; i++) if (String(state.brokers[i].name == null ? '' : state.brokers[i].name).trim() === '') return i;
+    return -1;
+  }
+  function brokerDialog() {
+    var opener = document.activeElement;
+    var name = h('input', { id: 'bd-name', type: 'text', placeholder: 'örn. Midas', autocomplete: 'off' });
+    var rate = h('input', { id: 'bd-rate', type: 'text', placeholder: 'örn. 0,15 (boşsa varsayılan oran)', inputmode: 'decimal', autocomplete: 'off' });
+    var err = h('div', { class: 'dlg-err', role: 'alert' });
+    var form = h('form', { class: 'dlg', novalidate: 'novalidate' }, [
+      h('div', { class: 'dlg-h' }, [
+        h('h3', { id: 'bd-title', text: 'Aracı kurum ekle' }),
+        h('button', { type: 'button', class: 'dlg-x', 'aria-label': 'Kapat', text: '✕', onclick: function () { close(true); } })
+      ]),
+      h('div', { class: 'dlg-b' }, [
+        h('div', { class: 'field' }, [
+          h('label', { class: 'lab', for: 'bd-name' }, ['Kurum adı', h('span', { class: 'req', text: ' *' })]),
+          h('div', { class: 'in' }, [name])
+        ]),
+        h('div', { class: 'field' }, [
+          h('label', { class: 'lab', for: 'bd-rate' }, ['Komisyon oranı (%)', h('span', { class: 'opt', text: ' (isteğe bağlı)' })]),
+          h('div', { class: 'in' }, [rate])
+        ]),
+        err
+      ]),
+      h('div', { class: 'dlg-f' }, [
+        h('button', { type: 'button', class: 'btn light', text: 'İptal', onclick: function () { close(true); } }),
+        h('button', { type: 'submit', class: 'btn', 'data-broker-save': '1', text: 'Listeye ekle' })
+      ])
+    ]);
+    var close = openDialog(form, 'bd-title', name, opener);
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var nm = name.value.trim(), slot = freeBroker();
+      if (!nm) { err.textContent = 'Kurum adı boş olamaz.'; name.focus(); return; }
+      if (state.brokers.some(function (b) { return String(b.name == null ? '' : b.name).trim().toLowerCase() === nm.toLowerCase(); })) { err.textContent = '“' + nm + '” zaten listede.'; name.focus(); return; }
+      var r = parseNumTR(rate.value);
+      if (r === undefined || (r != null && (r < 0 || r > 10))) { err.textContent = 'Komisyon oranı 0 ile 10 arasında bir sayı olmalı (örn. 0,15).'; rate.focus(); return; }
+      if (slot < 0) { err.textContent = 'En fazla 8 kurum eklenebilir; önce listeden birini boşalt.'; return; }
+      state.brokers[slot] = { name: nm, rate: r == null ? null : Number((r / 100).toPrecision(15)) };
+      close(false);
+      changed(true);
+      var back = document.querySelector('[data-broker-add]');
+      if (back) back.focus();
+      toast('“' + nm + '” aracı kurumlara eklendi.');
+    });
   }
   var lastSource = null;
   function delSource(i) {
