@@ -5,6 +5,12 @@
 
 ---
 
+## 2026-10-28 15:25 — Aracı kurum listesi salt okunur, düzenleme pencereden
+- Kurum satırları artık metin: ad (kalın), oran (yoksa "Varsayılan"), kullanılan oran, link (tıklanabilir ya da "Link yok"); sonda ✎ Düzenle ve sil düğmeleri (Kaynaklar listesiyle aynı düzen).
+- ✎ aynı pencereyi "Aracı kurumu düzenle" olarak dolu açar; "Kaydet" kurumu aynı sırada günceller. Ad değişirse o kurumu kullanan alım kayıtları da yeni adı alır (özette kayıp olmasın). Başka kurumun adı reddedilir; kendi adının harf değişikliği kabul.
+- Motor ve veri biçimi değişmedi.
+- Test: kurum listesi 33/33 (düzenleme senaryoları eklendi); kaynak 22/22, genel durum 16/16, grafik 15/15. `ui_test2` satır içi oran girişine yazdığı için kurum adımı pencereye uyarlanmış kopyayla çalıştırıldı: 48/65, yalnızca bilinen 17 eski hata.
+
 ## 2026-10-28 15:22 — Varlık özeti: pay/hedef çubuğu genişledi
 - "Pay / hedef" sütunu tablo genişliğinin %42'si; çubuklar artık satırı daha çok dolduruyor.
 - Test: Edge headless ekran görüntüsüyle kontrol edildi (yalnızca CSS genişliği değişti).
