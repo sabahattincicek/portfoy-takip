@@ -1270,7 +1270,7 @@ var Engine = (function () {
     ], defs);
 
     return [pageHead('Yatırım işlem defteri', 'Her alımı istediğin tarihte bir satır olarak gir. Hesaplamalar ilk girişinle başlar.'),
-      h('div', { class: 'stack' }, [tiles, ledger, h('div', { class: 'grid-2e' }, [assetSum, brokerSum]), commission, g])];
+      h('div', { class: 'stack' }, [tiles, h('div', { class: 'grid-2e' }, [assetSum, brokerSum]), commission, g, ledger])];
   }
   function pencil() {
     var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');

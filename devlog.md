@@ -5,6 +5,11 @@
 
 ---
 
+## 2026-10-28 14:40 — İşlem kaydı: Alım kayıtları kartı en alta
+- İşlem kaydı sekmesinde kart sırası: gösterge kutuları → Varlık / Aracı kurum özetleri → Aracı kurumlar ve komisyon → Sütunlar ve ipuçları → Alım kayıtları (önceden alım kayıtları kutuların hemen altındaydı).
+- Yalnızca sıralama değişti; motor ve veri yapısı aynı.
+- Test: Edge headless ekran görüntüsüyle sıra doğrulandı.
+
 ## 2026-10-28 14:31 — "Portföy" sekmesi ve Genel durum
 - 1. sekmenin adı "Portföy planı" → "Portföy"; diğer sekmelerdeki göndermeler de güncellendi.
 - Sekmenin en üstüne sade "Genel durum" bölümü (4 kutu, ek veri girişi yok):
