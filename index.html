@@ -214,7 +214,9 @@
   .comm-default { max-width: 320px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--line-2); }
   .tile-in .in { margin-top: 6px; }
   .tile-in .in input { height: 40px; font-size: 18px; font-weight: 650; }
-  .broker-row { display: grid; grid-template-columns: 28px minmax(0, 1.6fr) minmax(0, 1fr) 76px; gap: 8px; align-items: center; padding: 5px 0; }
+  .broker-grid.one { grid-template-columns: minmax(0, 1fr); max-width: 50%; }
+  .empty-note { margin: 0; color: var(--muted); }
+  .broker-row { display: grid; grid-template-columns: 28px minmax(0, 1.6fr) minmax(0, 1fr) 76px 32px; gap: 8px; align-items: center; padding: 5px 0; }
   .broker-row.head { font-size: 12px; color: var(--muted); font-weight: 600; }
   .broker-row .idx { color: var(--muted); font-size: 12px; text-align: center; }
   .chip { display: inline-block; padding: 2px 8px; border-radius: 6px; background: var(--calc); font-size: 12.5px; font-variant-numeric: tabular-nums; text-align: right; min-width: 64px; }
@@ -443,9 +445,15 @@ var Engine = (function () {
 
   var MAX_MONTHS = 120; // 3_Aylık_Takip satır 22–141
 
+  // Aracı kurum özet satırı: ilk 8 kurum xlsx'teki gibi M5:M12 (13 = kurum seçilmemiş, 14 = toplam); fazlası 15. satırdan itibaren.
+  function brokerRow(i) { return i < 8 ? 5 + i : 15 + (i - 8); }
+
   function compute(st, today) {
     var V = {};
     var defComm = st.settings.defComm, thr = st.settings.threshold;
+    st = Object.create(st);
+    st.brokers = st.brokers.slice();
+    while (st.brokers.length < 8) st.brokers.push({ name: '', rate: null });
 
     // ---------- 1_Portföy_Dağılımı ----------
     st.brokers.forEach(function (b, i) {
@@ -513,8 +521,10 @@ var Engine = (function () {
 
     // Aracı kurum bazında özet (M5:R14)
     var P14 = 0, N14 = 0, O14 = 0, R14 = 0;
+    var bRows = [];
     st.brokers.forEach(function (b, bi) {
-      var r = 5 + bi, nm = blank(b.name) ? '' : b.name;
+      var r = brokerRow(bi), nm = blank(b.name) ? '' : b.name;
+      bRows.push(r);
       V['2!M' + r] = nm;
       if (nm === '') { ['N', 'O', 'P', 'R'].forEach(function (c) { V['2!' + c + r] = ''; }); return; }
       var m = function (i) { return eqi(tx[i].broker, nm); };
@@ -526,15 +536,15 @@ var Engine = (function () {
     V['2!N13'] = sumIf(paid, noB); V['2!O13'] = sumIf(H, noB); V['2!P13'] = sumIf(I, noB);
     var c13 = 0; for (var q = 0; q < n; q++) if (noB(q) && !blank(tx[q].paid)) c13++;
     V['2!R13'] = c13;
-    for (var rr = 5; rr <= 13; rr++) {
+    bRows.concat([13]).forEach(function (rr) {
       N14 += num(V['2!N' + rr]); O14 += num(V['2!O' + rr]); P14 += num(V['2!P' + rr]); R14 += num(V['2!R' + rr]);
-    }
+    });
     V['2!N14'] = N14; V['2!O14'] = O14; V['2!P14'] = P14; V['2!R14'] = R14;
     var Q14 = 0;
-    for (rr = 5; rr <= 12; rr++) {
+    bRows.forEach(function (rr) {
       V['2!Q' + rr] = (V['2!M' + rr] === '' || P14 === 0) ? '' : V['2!P' + rr] / P14;
       Q14 += num(V['2!Q' + rr]);
-    }
+    });
     V['2!Q13'] = P14 === 0 ? '' : V['2!P13'] / P14;
     Q14 += num(V['2!Q13']);
     V['2!Q14'] = P14 === 0 ? '' : Q14;
@@ -642,7 +652,7 @@ var Engine = (function () {
   }
 
   var api = {
-    compute: compute, Err: Err, isErr: isErr, isNum: isNum,
+    compute: compute, brokerRow: brokerRow, Err: Err, isErr: isErr, isNum: isNum,
     ymdToSerial: ymdToSerial, serialToYMD: serialToYMD, isoToSerial: isoToSerial, todaySerial: todaySerial
   };
   if (typeof module === 'object' && module.exports) module.exports = api;
@@ -667,7 +677,6 @@ var Engine = (function () {
   // ---------- Varsayılan veriler (xlsx'teki değerler) ----------
   function defaults() {
     var brokers = [{ name: 'Kurum 1', rate: null }, { name: 'Kurum 2', rate: null }, { name: 'Kurum 3', rate: null }];
-    while (brokers.length < 8) brokers.push({ name: '', rate: null });
     return {
       version: 1,
       settings: { defComm: 0.002, threshold: 0.05 },
@@ -703,10 +712,9 @@ var Engine = (function () {
       if ('defComm' in o.settings) d.settings.defComm = numOrNull(o.settings.defComm);
       if ('threshold' in o.settings) d.settings.threshold = numOrNull(o.settings.threshold);
     }
-    if (Array.isArray(o.brokers)) for (var i = 0; i < 8; i++) {
-      var b = o.brokers[i] || {};
-      d.brokers[i] = { name: str(b.name), rate: numOrNull(b.rate) };
-    }
+    // Kurumlar serbest liste; eski 8 yuvalı kayıtlardaki boş yuvalar atlanır
+    if (Array.isArray(o.brokers)) d.brokers = o.brokers.filter(function (b) { return b && str(b.name).trim() !== ''; })
+      .map(function (b) { return { name: str(b.name), rate: numOrNull(b.rate) }; });
     if (Array.isArray(o.assets)) d.assets.forEach(function (a, i) {
       var s = o.assets[i]; if (!s) return;
       if ('target' in s) a.target = numOrNull(s.target);
@@ -1209,7 +1217,7 @@ var Engine = (function () {
 
     // Aracı kurum özeti
     var brows = h('tbody');
-    for (var r = 5; r <= 13; r++) (function (r) {
+    s.brokers.map(function (b, i) { return Engine.brokerRow(i); }).concat([13]).forEach(function (r) {
       var tr = h('tr', null, [
         h('td', null, [r === 13 ? h('i', { text: 'Kurum seçilmemiş' }) : out('2!M' + r, null, 'b')]),
         h('td', { class: 'num' }, [out('2!N' + r, F.tl)]),
@@ -1218,9 +1226,9 @@ var Engine = (function () {
         h('td', { class: 'num' }, [out('2!Q' + r, F.p1)]),
         h('td', { class: 'ctr' }, [out('2!R' + r, F.int0)])
       ]);
-      if (r < 13) painter(function (V) { tr.style.display = V['2!M' + r] === '' ? 'none' : ''; });
+      if (r !== 13) painter(function (V) { tr.style.display = V['2!M' + r] === '' ? 'none' : ''; });
       brows.appendChild(tr);
-    })(r);
+    });
     var brokerSum = card('🏦 Aracı kurum bazında özet', 'Kurum listesini aşağıdaki Aracı kurumlar ve komisyon kartında düzenle; bu tablo kendiliğinden güncellenir.', [
       h('div', { class: 'tscroll' }, [h('table', { class: 't' }, [
         h('thead', null, [h('tr', null, [h('th', { text: 'Kurum' }), h('th', { class: 'num', text: 'Ödenen' }), h('th', { class: 'num', text: 'Komisyon' }), h('th', { class: 'num', text: 'Net yatırım' }), h('th', { class: 'num', text: 'Pay' }), h('th', { class: 'ctr', text: 'İşlem' })])]),
@@ -1229,16 +1237,17 @@ var Engine = (function () {
       ])])
     ], { flush: true });
 
-    // Aracı kurumlar ve komisyon (Portföy sekmesinden taşındı; hücreler hâlâ 1. tablonun B4, F4:H11 hücreleri)
+    // Aracı kurumlar ve komisyon: serbest liste (hücreler 1. tablonun B4 ve F/G/H sütunları; 8'den fazlası aşağı uzar)
     var brokerCol = function (from, to) {
-      var col = [h('div', { class: 'broker-row head' }, [h('span'), h('span', { text: 'Kurum adı' }), h('span', { text: 'Komisyon oranı' }), h('span', { text: 'Kullanılan', style: 'text-align:right' })])];
+      var col = [h('div', { class: 'broker-row head' }, [h('span'), h('span', { text: 'Kurum adı' }), h('span', { text: 'Komisyon oranı' }), h('span', { text: 'Kullanılan', style: 'text-align:right' }), h('span')])];
       s.brokers.slice(from, to).forEach(function (b, k) {
         var i = from + k, r = 4 + i;
         col.push(h('div', { class: 'broker-row' }, [
           h('span', { class: 'idx', text: String(i + 1) }),
-          inp('1!F' + r, bind(b, 'name', 'text', { ph: 'Kurum ekle', label: 'Kurum ' + (i + 1) + ' adı' })),
+          inp('1!F' + r, bind(b, 'name', 'text', { ph: 'Kurum adı', label: 'Kurum ' + (i + 1) + ' adı' })),
           inp('1!G' + r, bind(b, 'rate', 'pct', { f: F.pc2, ph: 'Varsayılan', label: 'Kurum ' + (i + 1) + ' komisyon oranı' }), 'r'),
-          h('span', { style: 'text-align:right' }, [out('1!H' + r, F.pc2, 'chip')])
+          h('span', { style: 'text-align:right' }, [out('1!H' + r, F.pc2, 'chip')]),
+          h('button', { type: 'button', class: 'del', title: 'Kurumu sil', 'aria-label': (b.name || 'Kurum ' + (i + 1)) + ' kurumunu sil', 'data-broker-del': String(i), onclick: function () { delBroker(i); } }, [trash()])
         ]));
       });
       return h('div', null, col);
@@ -1246,22 +1255,21 @@ var Engine = (function () {
     painter(function () {
       document.querySelectorAll('[data-k^="1!H"]').forEach(function (el) { el.style.visibility = el.textContent ? '' : 'hidden'; });
     });
+    var half = Math.ceil(s.brokers.length / 2);
+    var brokerList = s.brokers.length
+      ? h('div', { class: 'broker-grid' + (s.brokers.length < 2 ? ' one' : '') }, [brokerCol(0, half), s.brokers.length > 1 ? brokerCol(half, s.brokers.length) : null])
+      : h('p', { class: 'empty-note', text: 'Henüz aracı kurum yok. “＋ Aracı kurum ekle” ile ekle; kayıtlarda kurumu seçince oranı otomatik uygulanır.' });
     var addBroker = h('button', { type: 'button', class: 'btn', 'data-broker-add': '1', onclick: brokerDialog }, ['＋ Aracı kurum ekle']);
-    painter(function () {
-      var full = freeBroker() < 0;
-      addBroker.disabled = full;
-      addBroker.title = full ? '8 kurumun hepsi dolu; eklemek için birini boşalt.' : '';
-    });
     var commission = card('🏦 Aracı kurumlar ve komisyon', 'Kayıtta kurumu seçince oranı otomatik uygulanır. Öncelik: işleme özel oran → kurum oranı → varsayılan oran.', [
       h('div', { class: 'comm-default' }, [h('div', { class: 'field' }, [
         h('span', { class: 'lab' }, ['Varsayılan komisyon oranı', note("Aracı kurumunun işlem komisyonu. Kayıtta komisyon % boş bırakılırsa ve kurumun oranı yoksa bu oran kullanılır. Örnek değerdir, kendi oranını yaz.")]),
         inp('1!B4', bind(s.settings, 'defComm', 'pct', { f: F.pc2, label: 'Varsayılan komisyon oranı' }), 'r'),
         h('span', { class: 'hint', text: 'Kurum ya da işlem oranı yoksa bu kullanılır.' })
       ])]),
-      h('div', { class: 'broker-grid' }, [brokerCol(0, 4), brokerCol(4, 8)])
+      brokerList
     ], {
       action: addBroker,
-      note: "Kurum adlarını kendi kullandığın aracı kurumlarla değiştir (8'e kadar). Oranı boş bırakırsan varsayılan oran kullanılır." });
+      note: "Kullandığın aracı kurumları ekle; sayı sınırı yok. Oranı boş bırakırsan varsayılan oran kullanılır." });
 
     var defs = h('dl', { class: 'defs' });
     [['Tarih', 'Alım günü (gg.aa.yyyy). Her alım ayrı satır; aynı ay birden fazla olabilir.'],
@@ -1356,11 +1364,7 @@ var Engine = (function () {
     return close;
   }
 
-  // ---------- Aracı kurum ekle penceresi (ilk boş kurum yuvasına yazar; en fazla 8) ----------
-  function freeBroker() {
-    for (var i = 0; i < state.brokers.length; i++) if (String(state.brokers[i].name == null ? '' : state.brokers[i].name).trim() === '') return i;
-    return -1;
-  }
+  // ---------- Aracı kurum ekle penceresi (listenin sonuna ekler) ----------
   function brokerDialog() {
     var opener = document.activeElement;
     var name = h('input', { id: 'bd-name', type: 'text', placeholder: 'örn. Midas', autocomplete: 'off' });
@@ -1390,13 +1394,12 @@ var Engine = (function () {
     var close = openDialog(form, 'bd-title', name, opener);
     form.addEventListener('submit', function (e) {
       e.preventDefault();
-      var nm = name.value.trim(), slot = freeBroker();
+      var nm = name.value.trim();
       if (!nm) { err.textContent = 'Kurum adı boş olamaz.'; name.focus(); return; }
       if (state.brokers.some(function (b) { return String(b.name == null ? '' : b.name).trim().toLowerCase() === nm.toLowerCase(); })) { err.textContent = '“' + nm + '” zaten listede.'; name.focus(); return; }
       var r = parseNumTR(rate.value);
       if (r === undefined || (r != null && (r < 0 || r > 10))) { err.textContent = 'Komisyon oranı 0 ile 10 arasında bir sayı olmalı (örn. 0,15).'; rate.focus(); return; }
-      if (slot < 0) { err.textContent = 'En fazla 8 kurum eklenebilir; önce listeden birini boşalt.'; return; }
-      state.brokers[slot] = { name: nm, rate: r == null ? null : Number((r / 100).toPrecision(15)) };
+      state.brokers.push({ name: nm, rate: r == null ? null : Number((r / 100).toPrecision(15)) });
       close(false);
       changed(true);
       var back = document.querySelector('[data-broker-add]');
@@ -1413,6 +1416,24 @@ var Engine = (function () {
       if (!lastSource) return;
       state.sources.splice(lastSource.i, 0, lastSource.x);
       lastSource = null;
+      changed(true);
+    });
+  }
+
+  var lastBroker = null;
+  // Silinen kurumu kullanan kayıtlar "Kurum seçilmemiş"e düşer (özet toplamları tutarlı kalsın); Geri al hepsini geri koyar.
+  function delBroker(i) {
+    var b = state.brokers[i], nm = String(b.name).trim().toLowerCase();
+    var used = state.tx.filter(function (t) { return nm !== '' && String(t.broker).trim().toLowerCase() === nm; });
+    lastBroker = { i: i, b: b, used: used.map(function (t) { return [t, t.broker]; }) };
+    state.brokers.splice(i, 1);
+    used.forEach(function (t) { t.broker = ''; });
+    changed(true);
+    toast('“' + (b.name || 'Kurum') + '” silindi.' + (used.length ? ' ' + used.length + ' kayıtta kurum boşaltıldı.' : ''), 'Geri al', function () {
+      if (!lastBroker) return;
+      state.brokers.splice(lastBroker.i, 0, lastBroker.b);
+      lastBroker.used.forEach(function (p) { p[0].broker = p[1]; });
+      lastBroker = null;
       changed(true);
     });
   }

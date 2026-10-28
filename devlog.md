@@ -5,6 +5,13 @@
 
 ---
 
+## 2026-10-28 14:54 — Aracı kurumlar serbest liste oldu (8 yuva kaldırıldı)
+- Kurum kartında artık yalnızca eklenen kurumlar görünüyor; boş "Kurum ekle" yuvaları yok, sayı sınırı yok. "＋ Aracı kurum ekle" listenin sonuna ekler; her satırda sil düğmesi (Geri al ile). Hiç kurum yoksa kısa yönlendirme metni.
+- Kurum silinirken o kurumu kullanan kayıtlarda kurum boşaltılır ("Kurum seçilmemiş"e düşer) ki özet toplamları ve "Toplam ödenen" doğru kalsın; Geri al kayıtları da geri koyar.
+- Motor: içeride 8'e kadar boş satırla tamamlanıyor, böylece 8 ve altı kurumda çıktı xlsx ile birebir aynı (M5:M12, 13 = seçilmemiş, 14 = toplam). 9. ve sonraki kurumlar 2!M15'ten itibaren satır alır, toplamlara dahil. `Engine.brokerRow(i)` eklendi.
+- Veri uyumu: eski 8 yuvalı kayıtlar / JSON'lar açılırken boş yuvalar atlanır. Yeni JSON'da yalnızca dolu kurumlar var.
+- Test: xlsx karşılaştırması 2 senaryoda 241/241 farksız; kurum listesi 21/21; kaynak 22/22, genel durum 16/16, grafik 15/15. `ui_test2` 47/65: önceki 17 bilinen hata + artık geçersiz olan "8 kurum satırı" kontrolü.
+
 ## 2026-10-28 14:48 — "Aracı kurum ekle" penceresi, daha geniş masaüstü düzeni
 - Aracı kurumlar ve komisyon kartına "＋ Aracı kurum ekle" düğmesi → pencere: Kurum adı (zorunlu), komisyon oranı % (isteğe bağlı, 0–10; boşsa varsayılan oran).
 - Yeni kurum ilk boş kurum yuvasına yazılır (yapı 8 yuvalı kalır; motor ve JSON biçimi değişmedi). Aynı ad (büyük/küçük harf duyarsız) reddedilir; 8 yuva doluysa düğme pasif ve nedenini söylüyor, bir yuva boşalınca yeniden etkin.
