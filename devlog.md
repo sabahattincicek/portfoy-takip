@@ -5,6 +5,10 @@
 
 ---
 
+## 2026-10-28 15:22 — Varlık özeti: pay/hedef çubuğu genişledi
+- "Pay / hedef" sütunu tablo genişliğinin %42'si; çubuklar artık satırı daha çok dolduruyor.
+- Test: Edge headless ekran görüntüsüyle kontrol edildi (yalnızca CSS genişliği değişti).
+
 ## 2026-10-28 15:20 — İşlem kaydı: yeni kart düzeni (deneme)
 - Sıra: gösterge kutuları → Varlık bazında özet (tam genişlik) → Sütunlar ve ipuçları (açılır/kapanır) → yan yana [Aracı kurumlar ve komisyon | Aracı kurum bazında özet] → Alım kayıtları.
 - Kurum listesi yarım genişliğe sığsın diye sütunlar daraltıldı (oran 104 px, kullanılan 70 px); özet kartındaki "aşağıdaki" ifadesi "soldaki" oldu.

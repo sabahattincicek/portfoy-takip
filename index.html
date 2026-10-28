@@ -1208,7 +1208,7 @@ var Engine = (function () {
     })(a);
     var assetSum = card('📊 Varlık bazında özet', h('span', null, ['Maliyet bazlı: piyasa değeri değil, yatırdığın net tutara göre. Fark eşiği: ', out('2!K5', F.pc1, 'cf-pos')]), [
       h('div', { class: 'tscroll' }, [h('table', { class: 't' }, [
-        h('thead', null, [h('tr', null, [h('th', { text: 'Varlık' }), h('th', { class: 'num', text: 'Net yatırım' }), h('th', { text: 'Pay / hedef' }), h('th', { class: 'num', text: 'Pay' }), h('th', { class: 'num', text: 'Hedef' }), h('th', { class: 'num', text: 'Fark' })])]),
+        h('thead', null, [h('tr', null, [h('th', { text: 'Varlık' }), h('th', { class: 'num', text: 'Net yatırım' }), h('th', { text: 'Pay / hedef', style: 'width:42%' }), h('th', { class: 'num', text: 'Pay' }), h('th', { class: 'num', text: 'Hedef' }), h('th', { class: 'num', text: 'Fark' })])]),
         arows,
         h('tfoot', null, [h('tr', null, [h('td', { text: 'Toplam' }), h('td', { class: 'num' }, [out('2!G10', F.tl)]), h('td'), h('td', { class: 'num' }, [out('2!H10', F.p1)]), h('td', { class: 'num' }, [out('2!I10', F.p1)]), h('td')])])
       ])])
