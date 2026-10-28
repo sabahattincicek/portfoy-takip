@@ -5,6 +5,14 @@
 
 ---
 
+## 2026-10-28 14:20 — Portföy planı: kaynaklar elle yönetilen listeye dönüştü
+- "Kaynaklar ve linkler" artık tamamen kullanıcı listesi: önceden sabit olan 5 kaynak (TÜİK, TEFAS, KAP, TCMB, aracı kurum hesapları) ilk kayıtlar olarak duruyor ama her biri düzenlenip silinebiliyor.
+- Boş "(kendi kaynağın)" satırları ve "(kendi linkini ekle)" yer tutucusu kaldırıldı; linksiz kayıtta "Link yok" yazıyor.
+- "＋ Kaynak ekle" düğmesi → pencere (Konu zorunlu; açıklama, nereye girilir, link isteğe bağlı). Aynı pencere ✎ ile düzenlemede kullanılıyor. Link doğrulaması (http/https/www), Esc / dışarı tıklama ile kapanma, Tab odak döngüsü; telefonda alttan açılan panel.
+- Silmede "Geri al" (aynı sıraya geri koyar).
+- Veri uyumu: eski 8 satırlık kayıtlar/JSON'lar otomatik taşınır (boş yer tutucular atlanır, linkli olanlar korunur).
+- Test: kaynak testi 22/22, arayüz 62/62, grafik 15/15, xlsx karşılaştırması 241/241 farksız.
+
 ## 2026-10-28 14:10 — Git reposu, GitHub ve GitHub Pages
 - Yerel git reposu oluşturuldu; `portfoy.html` → `index.html` olarak yeniden adlandırıldı (Pages kök adresi için).
 - `.gitignore`: orijinal `Portfoy.xlsx` repoya konmadı (public repo).

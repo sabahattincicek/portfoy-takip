@@ -253,11 +253,37 @@
   .defs dt { font-weight: 650; color: var(--text); }
   .defs dd { margin: 0; }
 
-  .src { display: grid; grid-template-columns: minmax(150px, 1fr) minmax(0, 1.6fr) minmax(0, 1.1fr) minmax(0, 1.2fr); gap: 10px 14px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line-2); }
+  .src { display: grid; grid-template-columns: minmax(140px, 1fr) minmax(0, 1.6fr) minmax(0, 1.1fr) minmax(0, 1.1fr) 72px; gap: 10px 14px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line-2); }
   .src.head { font-size: 12px; color: var(--muted); font-weight: 600; padding-top: 0; }
   .src:last-child { border-bottom: 0; }
   .src .topic { font-weight: 650; }
   .src .where { font-size: 12.5px; color: var(--muted); }
+  .src .none { color: #b3b8c2; }
+  .src-link { color: #1a56c4; text-decoration: none; word-break: break-all; font-size: 13.5px; }
+  .src-link:hover { text-decoration: underline; }
+  .src-act { display: flex; gap: 2px; justify-content: flex-end; }
+  .ibtn { border: 0; background: none; cursor: pointer; color: #8a93a3; width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; }
+  .ibtn:hover { color: var(--navy); background: var(--navy-soft); }
+
+  /* ---------- Pencere (dialog) ---------- */
+  body.dlg-open { overflow: hidden; }
+  .dlg-ov { position: fixed; inset: 0; z-index: 100; background: rgba(15, 23, 42, .45); display: grid; place-items: center; padding: 16px; animation: dlgFade .12s ease-out; }
+  .dlg { background: #fff; border-radius: 14px; width: min(520px, 100%); max-height: calc(100vh - 32px); overflow: auto; box-shadow: 0 20px 50px rgba(0, 0, 0, .25); animation: dlgUp .15s ease-out; }
+  .dlg-h { display: flex; align-items: center; gap: 12px; padding: 18px 20px 4px; }
+  .dlg-h h3 { margin: 0; flex: 1; font-size: 17px; color: var(--navy); }
+  .dlg-x { border: 0; background: none; cursor: pointer; width: 32px; height: 32px; border-radius: 8px; color: var(--muted); font-size: 15px; }
+  .dlg-x:hover { background: var(--line-2); color: var(--text); }
+  .dlg-b { padding: 12px 20px 4px; display: grid; gap: 14px; }
+  .dlg-f { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px 18px; }
+  .dlg .lab .req { color: var(--neg); }
+  .dlg .lab .opt { color: var(--muted); font-weight: 400; }
+  .dlg-err { color: var(--neg); font-size: 13px; }
+  .dlg-err:empty { display: none; }
+  .in textarea { width: 100%; min-height: 72px; resize: vertical; padding: 8px 10px; border-radius: 8px; font: inherit;
+    border: 1px solid var(--input-line); background: var(--input-bg); color: var(--input-fg); }
+  .in textarea:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px rgba(31,56,100,.15); background: #fff; }
+  @keyframes dlgFade { from { opacity: 0; } }
+  @keyframes dlgUp { from { opacity: 0; transform: translateY(8px); } }
 
   .kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0 24px; }
   .kv > div { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line-2); font-size: 13.5px; }
@@ -318,7 +344,13 @@
     .tile.hero { grid-column: auto; }
     .hero .val { font-size: 28px; }
     .asset-row { grid-template-columns: minmax(0, 1fr) 110px; }
-    .src { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+    .src { grid-template-columns: minmax(0, 1fr) auto; gap: 2px 8px; }
+    .src > * { grid-column: 1 / -1; }
+    .src > .topic { grid-column: 1; grid-row: 1; }
+    .src > .src-act { grid-column: 2; grid-row: 1; }
+    .src .none { display: none; }
+    .dlg-ov { place-items: end center; padding: 0; }
+    .dlg { width: 100%; border-radius: 16px 16px 0 0; max-height: 92vh; }
     .src.head { display: none; }
     .rb-row { grid-template-columns: minmax(0, 1fr); gap: 10px; }
     .card-h, .card-b { padding-left: 16px; padding-right: 16px; }
@@ -641,10 +673,7 @@ var Engine = (function () {
         { a: 'TEFAS', b: 'Yatırım fonlarının fiyatı ve getirisi (BIST fonları, PPF vb.)', c: 'Fon seçimi / Aylık takip → varlık değerleri', d: 'https://www.tefas.gov.tr' },
         { a: 'KAP – Kamuyu Aydınlatma Platformu', b: 'Fon ve şirket bildirimleri, fon izahnameleri', c: 'Araştırma', d: 'https://www.kap.org.tr' },
         { a: 'TCMB', b: 'Faiz, kur ve enflasyon beklentisi verileri', c: 'Araştırma', d: 'https://www.tcmb.gov.tr' },
-        { a: 'Aracı kurum hesapların', b: 'Varlıklarının güncel piyasa değeri ve komisyon oranı', c: 'Aylık takip → varlık değerleri, Portföy planı → Aracı kurumlar', d: '(kendi linkini ekle)' },
-        { a: '(kendi kaynağın)', b: '', c: '', d: '' },
-        { a: '(kendi kaynağın)', b: '', c: '', d: '' },
-        { a: '(kendi kaynağın)', b: '', c: '', d: '' }
+        { a: 'Aracı kurum hesapların', b: 'Varlıklarının güncel piyasa değeri ve komisyon oranı', c: 'Aylık takip → varlık değerleri, Portföy planı → Aracı kurumlar', d: '' }
       ],
       links3: { tufe: 'https://data.tuik.gov.tr', broker: '(kendi linkini ekle)', other: '(kendi linkini ekle)' },
       tx: [blankTx()],
@@ -673,11 +702,16 @@ var Engine = (function () {
       if ('ex' in s) a.ex = str(s.ex);
       if ('role' in s) a.role = str(s.role);
     });
-    if (Array.isArray(o.sources)) d.sources.forEach(function (s, i) {
-      var x = o.sources[i]; if (!x) return;
-      if (i >= 5) { s.a = str(x.a); s.b = str(x.b); s.c = str(x.c); }
-      s.d = str(x.d);
-    });
+    if (Array.isArray(o.sources)) {
+      // Eski biçim 8 sabit satırdı: '(kendi kaynağın)' boş satırları ve '(kendi linkini ekle)' yer tutucusu atlanır
+      d.sources = o.sources.filter(function (x) { return x && typeof x === 'object'; }).map(function (x) {
+        var link = str(x.d).trim();
+        if (link === '(kendi linkini ekle)') link = '';
+        return { a: str(x.a).trim(), b: str(x.b).trim(), c: str(x.c).trim(), d: link };
+      }).filter(function (x) {
+        return (x.a || x.b || x.c || x.d) && !(x.a === '(kendi kaynağın)' && !x.b && !x.c && !x.d);
+      }).map(function (x) { if (!x.a) x.a = '(adsız kaynak)'; return x; });
+    }
     if (o.links3) ['tufe', 'broker', 'other'].forEach(function (k) { if (k in o.links3) d.links3[k] = str(o.links3[k]); });
     if (Array.isArray(o.tx)) {
       d.tx = o.tx.map(function (t) {
@@ -1042,19 +1076,29 @@ var Engine = (function () {
       { note: "Kurum adlarını kendi kullandığın aracı kurumlarla değiştir (8'e kadar). Oranı boş bırakırsan varsayılan oran kullanılır." });
 
     // Kaynaklar
-    var src = [h('div', { class: 'src head' }, [h('span', { text: 'Konu' }), h('span', { text: 'Ne için kullanılır' }), h('span', { text: 'Tabloda nereye girilir' }), h('span', { text: 'Link' })])];
-    s.sources.forEach(function (x, i) {
-      var r = 25 + i;
-      var linkCell = inp('1!D' + r, bind(x, 'd', 'link'));
-      if (i < 5) src.push(h('div', { class: 'src' }, [h('span', { class: 'topic', text: x.a }), h('span', { text: x.b }), h('span', { class: 'where', text: x.c }), linkCell]));
-      else src.push(h('div', { class: 'src' }, [
-        inp('1!A' + r, bind(x, 'a', 'text', { ph: 'Kendi kaynağın', label: 'Kaynak adı' }), 'i'),
-        inp('1!B' + r, bind(x, 'b', 'text', { ph: 'Ne için kullanılır', label: 'Kaynak açıklaması' })),
-        inp('1!C' + r, bind(x, 'c', 'text', { ph: 'Nereye girilir', label: 'Kaynak nereye girilir' })),
-        linkCell
-      ]));
+    var src = [];
+    if (!s.sources.length) {
+      src.push(h('div', { class: 'empty' }, [h('b', { text: 'Henüz kaynak yok' }), '“＋ Kaynak ekle” ile sık kullandığın siteleri buraya ekleyebilirsin.']));
+    } else {
+      src.push(h('div', { class: 'src head' }, [h('span', { text: 'Konu' }), h('span', { text: 'Ne için kullanılır' }), h('span', { text: 'Tabloda nereye girilir' }), h('span', { text: 'Link' }), h('span')]));
+      s.sources.forEach(function (x, i) {
+        var href = linkHref(x.d);
+        src.push(h('div', { class: 'src', 'data-src': String(i) }, [
+          h('span', { class: 'topic', text: x.a }),
+          h('span', { class: 'desc' + (x.b ? '' : ' none'), text: x.b || '—' }),
+          h('span', { class: 'where' + (x.c ? '' : ' none'), text: x.c || '—' }),
+          href ? h('a', { class: 'src-link', href: href, target: '_blank', rel: 'noopener noreferrer', title: href, text: x.d.replace(/^https?:\/\//i, '').replace(/\/$/, '') + ' ↗' })
+               : h('span', { class: 'muted', text: 'Link yok' }),
+          h('span', { class: 'src-act' }, [
+            h('button', { type: 'button', class: 'ibtn', title: 'Düzenle', 'aria-label': x.a + ' kaynağını düzenle', 'data-src-edit': String(i), onclick: function () { sourceDialog(i); } }, [pencil()]),
+            h('button', { type: 'button', class: 'del', title: 'Sil', 'aria-label': x.a + ' kaynağını sil', 'data-src-del': String(i), onclick: function () { delSource(i); } }, [trash()])
+          ])
+        ]));
+      });
+    }
+    var sources = card('🔗 Kaynaklar ve linkler', 'Sık kullandığın siteler. Düzenlemek ya da silmek için satırdaki simgeleri kullan.', src, {
+      action: h('button', { type: 'button', class: 'btn', 'data-src-add': '1', onclick: function () { sourceDialog(null); } }, ['＋ Kaynak ekle'])
     });
-    var sources = card('🔗 Kaynaklar ve linkler', 'Kendi linklerini de ekleyebilirsin; bir linki değiştirmek için ✎ simgesine tıkla.', src);
 
     var g = guide('Nasıl kullanılır — bu sekme planının ayarlarıdır', [
       'Mavi alanlar senin girdilerin; diğer değerler otomatik hesaplanır.',
@@ -1185,6 +1229,87 @@ var Engine = (function () {
     return [pageHead('Yatırım işlem defteri', 'Her alımı istediğin tarihte bir satır olarak gir. Hesaplamalar ilk girişinle başlar.'),
       h('div', { class: 'stack' }, [tiles, ledger, h('div', { class: 'grid-2e' }, [assetSum, brokerSum]), g])];
   }
+  function pencil() {
+    var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', '16'); svg.setAttribute('height', '16'); svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('fill', 'none'); svg.setAttribute('stroke', 'currentColor'); svg.setAttribute('stroke-width', '2');
+    svg.setAttribute('stroke-linecap', 'round'); svg.setAttribute('stroke-linejoin', 'round'); svg.setAttribute('aria-hidden', 'true');
+    svg.innerHTML = '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>';
+    return svg;
+  }
+
+  // ---------- Kaynak ekle / düzenle penceresi ----------
+  function sourceDialog(idx) {
+    var editing = idx != null, x = editing ? state.sources[idx] : { a: '', b: '', c: '', d: '' };
+    var opener = document.activeElement, f = {};
+    function field(key, label, ph, req, area) {
+      var el = h(area ? 'textarea' : 'input', { id: 'sd-' + key, placeholder: ph, rows: area ? '3' : null, type: area ? null : 'text', autocomplete: 'off' });
+      el.value = x[key] || '';
+      f[key] = el;
+      return h('div', { class: 'field' }, [
+        h('label', { class: 'lab', for: 'sd-' + key }, [label, req ? h('span', { class: 'req', text: ' *' }) : h('span', { class: 'opt', text: ' (isteğe bağlı)' })]),
+        h('div', { class: 'in' }, [el])
+      ]);
+    }
+    var err = h('div', { class: 'dlg-err', role: 'alert' });
+    var form = h('form', { class: 'dlg', novalidate: 'novalidate' }, [
+      h('div', { class: 'dlg-h' }, [
+        h('h3', { id: 'sd-title', text: editing ? 'Kaynağı düzenle' : 'Yeni kaynak ekle' }),
+        h('button', { type: 'button', class: 'dlg-x', 'aria-label': 'Kapat', text: '✕', onclick: function () { close(true); } })
+      ]),
+      h('div', { class: 'dlg-b' }, [
+        field('a', 'Konu', 'örn. TEFAS', true),
+        field('b', 'Ne için kullanılır', 'örn. Fon fiyatları ve getirileri', false, true),
+        field('c', 'Tabloda nereye girilir', 'örn. Aylık takip → varlık değerleri'),
+        field('d', 'Link', 'https://…'),
+        err
+      ]),
+      h('div', { class: 'dlg-f' }, [
+        h('button', { type: 'button', class: 'btn light', text: 'İptal', onclick: function () { close(true); } }),
+        h('button', { type: 'submit', class: 'btn', 'data-src-save': '1', text: editing ? 'Kaydet' : 'Listeye ekle' })
+      ])
+    ]);
+    var ov = h('div', { class: 'dlg-ov', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'sd-title' }, [form]);
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var v = { a: f.a.value.trim(), b: f.b.value.trim(), c: f.c.value.trim(), d: f.d.value.trim() };
+      if (!v.a) { err.textContent = 'Konu boş olamaz.'; f.a.focus(); return; }
+      if (v.d && !linkHref(v.d)) { err.textContent = 'Link http://, https:// ya da www. ile başlamalı.'; f.d.focus(); return; }
+      if (editing) state.sources[idx] = v; else state.sources.push(v);
+      close(false);
+      changed(true);
+      var back = document.querySelector(editing ? '[data-src-edit="' + idx + '"]' : '[data-src-add]');
+      if (back) back.focus();
+      toast(editing ? 'Kaynak güncellendi.' : '“' + v.a + '” listeye eklendi.');
+    });
+    ov.addEventListener('mousedown', function (e) { if (e.target === ov) close(true); });
+    ov.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { e.preventDefault(); close(true); return; }
+      if (e.key !== 'Tab') return;
+      var fs = form.querySelectorAll('input, textarea, button'), first = fs[0], last = fs[fs.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    });
+    function close(refocus) {
+      ov.remove(); document.body.classList.remove('dlg-open');
+      if (refocus && opener && opener.focus) opener.focus();
+    }
+    document.body.appendChild(ov); document.body.classList.add('dlg-open');
+    f.a.focus();
+  }
+  var lastSource = null;
+  function delSource(i) {
+    lastSource = { i: i, x: state.sources[i] };
+    state.sources.splice(i, 1);
+    changed(true);
+    toast('“' + lastSource.x.a + '” silindi.', 'Geri al', function () {
+      if (!lastSource) return;
+      state.sources.splice(lastSource.i, 0, lastSource.x);
+      lastSource = null;
+      changed(true);
+    });
+  }
+
   function trash() {
     var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('width', '16'); svg.setAttribute('height', '16'); svg.setAttribute('viewBox', '0 0 24 24');
