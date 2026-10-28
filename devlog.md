@@ -9,6 +9,8 @@
 - Yerel git reposu oluşturuldu; `portfoy.html` → `index.html` olarak yeniden adlandırıldı (Pages kök adresi için).
 - `.gitignore`: orijinal `Portfoy.xlsx` repoya konmadı (public repo).
 - GitHub'da `sabahattincicek/portfoy-takip` (public) reposu açıldı, `main` dalı gönderildi, GitHub Pages `main` / kök klasörden yayına alındı.
+- Repo: https://github.com/sabahattincicek/portfoy-takip · Yayın: https://sabahattincicek.github.io/portfoy-takip/
+- Not: Yayındaki site ile yerel dosya farklı "origin" olduğundan localStorage verisi paylaşılmaz; taşımak için JSON dışa/içe aktar.
 - `devlog.md` (bu dosya) ve `CLAUDE.md` eklendi. Kural: her oturum başında `devlog.md`'nin ilk 150 satırı okunur; her yapılan iş tarih-saatle en üste yazılır.
 - Sonraki plan: sekmeleri tek tek ele alıp arayüzü (özellikle tablolar ve mobil kullanım) iyileştirmek.
 
