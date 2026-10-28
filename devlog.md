@@ -5,6 +5,14 @@
 
 ---
 
+## 2026-10-28 14:27 — Ayarlar ilgili sekmelere taşındı
+- Portföy planı'ndaki "Ayarlar" kartı kaldırıldı; sekmede artık yalnızca hedef dağılım (tam genişlik) ve kaynaklar var.
+- Varsayılan komisyon oranı + 8 aracı kurum → İşlem kaydı sekmesinde yeni "🏦 Aracı kurumlar ve komisyon" kartı (özet tablolarının altında; kurumlar masaüstünde 2 sütun, telefonda tek sütun). Kartta öncelik sırası yazıyor: işleme özel oran → kurum oranı → varsayılan oran.
+- Rebalancing sapma eşiği → Rebalancing sekmesinin üstündeki kutu artık düzenlenebilir giriş (değişince aksiyonlar anında güncellenir).
+- Rehber/açıklama metinleri yeni yerlere göre güncellendi; varsayılan "Aracı kurum hesapların" kaynağının metni "İşlem kaydı → Aracı kurumlar" oldu.
+- Veri yapısı ve hesap motoru değişmedi (hücre anahtarları yine 1. tablonun B4, B5, F4:H11'i); kayıtlı veriler ve JSON yedekleri aynen çalışır.
+- Test: arayüz 65/65, kaynak 22/22, grafik 15/15, xlsx karşılaştırması 241/241 farksız.
+
 ## 2026-10-28 14:20 — Portföy planı: kaynaklar elle yönetilen listeye dönüştü
 - "Kaynaklar ve linkler" artık tamamen kullanıcı listesi: önceden sabit olan 5 kaynak (TÜİK, TEFAS, KAP, TCMB, aracı kurum hesapları) ilk kayıtlar olarak duruyor ama her biri düzenlenip silinebiliyor.
 - Boş "(kendi kaynağın)" satırları ve "(kendi linkini ekle)" yer tutucusu kaldırıldı; linksiz kayıtta "Link yok" yazıyor.

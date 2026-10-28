@@ -205,6 +205,10 @@
   .badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 600; background: #e6f4ea; color: #1e6b34; }
   .badge.cf-neg { background: #fde9e7; }
 
+  .broker-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 28px; }
+  .comm-default { max-width: 320px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--line-2); }
+  .tile-in .in { margin-top: 6px; }
+  .tile-in .in input { height: 40px; font-size: 18px; font-weight: 650; }
   .broker-row { display: grid; grid-template-columns: 28px minmax(0, 1.6fr) minmax(0, 1fr) 76px; gap: 8px; align-items: center; padding: 5px 0; }
   .broker-row.head { font-size: 12px; color: var(--muted); font-weight: 600; }
   .broker-row .idx { color: var(--muted); font-size: 12px; text-align: center; }
@@ -337,7 +341,9 @@
   .toast button { background: none; border: 0; color: #8ab4f8; cursor: pointer; font-weight: 700; }
 
   @media (max-width: 900px) {
-    .grid-2, .grid-2e { grid-template-columns: minmax(0, 1fr); }
+    .grid-2, .grid-2e, .broker-grid { grid-template-columns: minmax(0, 1fr); }
+    .broker-grid > div + div .broker-row.head { display: none; }
+    .comm-default { max-width: none; }
     .rb-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   }
   @media (max-width: 640px) {
@@ -673,7 +679,7 @@ var Engine = (function () {
         { a: 'TEFAS', b: 'Yatırım fonlarının fiyatı ve getirisi (BIST fonları, PPF vb.)', c: 'Fon seçimi / Aylık takip → varlık değerleri', d: 'https://www.tefas.gov.tr' },
         { a: 'KAP – Kamuyu Aydınlatma Platformu', b: 'Fon ve şirket bildirimleri, fon izahnameleri', c: 'Araştırma', d: 'https://www.kap.org.tr' },
         { a: 'TCMB', b: 'Faiz, kur ve enflasyon beklentisi verileri', c: 'Araştırma', d: 'https://www.tcmb.gov.tr' },
-        { a: 'Aracı kurum hesapların', b: 'Varlıklarının güncel piyasa değeri ve komisyon oranı', c: 'Aylık takip → varlık değerleri, Portföy planı → Aracı kurumlar', d: '' }
+        { a: 'Aracı kurum hesapların', b: 'Varlıklarının güncel piyasa değeri ve komisyon oranı', c: 'Aylık takip → varlık değerleri, İşlem kaydı → Aracı kurumlar', d: '' }
       ],
       links3: { tufe: 'https://data.tuik.gov.tr', broker: '(kendi linkini ekle)', other: '(kendi linkini ekle)' },
       tx: [blankTx()],
@@ -1044,37 +1050,6 @@ var Engine = (function () {
     ]));
     var alloc = card('Hedef varlık dağılımı', 'Yeni paranı bu oranlara göre böl. Toplamın %100 olması gerekir.', [bar, legend, h('div', { style: 'margin-top:14px' }, rows)]);
 
-    // Ayarlar
-    var settings = card('Ayarlar', 'Nadiren değiştirmen yeterli.', [h('div', { class: 'stack', style: 'gap:14px' }, [
-      h('div', { class: 'field' }, [
-        h('span', { class: 'lab' }, ['Varsayılan komisyon oranı', note("Aracı kurumunun işlem komisyonu. 2_Yatırım_Kaydı'nda komisyon % boş bırakılırsa bu oran kullanılır. Örnek değerdir, kendi oranını yaz.")]),
-        inp('1!B4', bind(s.settings, 'defComm', 'pct', { f: F.pc2, label: 'Varsayılan komisyon oranı' }), 'r'),
-        h('span', { class: 'hint', text: 'Kurum ya da işlem oranı yoksa bu kullanılır.' })
-      ]),
-      h('div', { class: 'field' }, [
-        h('span', { class: 'lab' }, ['Rebalancing sapma eşiği (± puan)', note('Bir varlığın payı hedeften bu kadar puan saptığında 4_Rebalancing uyarı verir.')]),
-        inp('1!B5', bind(s.settings, 'threshold', 'pct', { f: F.pc2, label: 'Sapma eşiği' }), 'r'),
-        h('span', { class: 'hint', text: 'Pay hedeften bu kadar uzaklaşınca uyarı alırsın.' })
-      ])
-    ])]);
-
-    // Aracı kurumlar
-    var br = [h('div', { class: 'broker-row head' }, [h('span'), h('span', { text: 'Kurum adı' }), h('span', { text: 'Komisyon oranı' }), h('span', { text: 'Kullanılan', style: 'text-align:right' })])];
-    s.brokers.forEach(function (b, i) {
-      var r = 4 + i;
-      br.push(h('div', { class: 'broker-row' }, [
-        h('span', { class: 'idx', text: String(i + 1) }),
-        inp('1!F' + r, bind(b, 'name', 'text', { ph: 'Kurum ekle', label: 'Kurum ' + (i + 1) + ' adı' })),
-        inp('1!G' + r, bind(b, 'rate', 'pct', { f: F.pc2, ph: 'Varsayılan', label: 'Kurum ' + (i + 1) + ' komisyon oranı' }), 'r'),
-        h('span', { style: 'text-align:right' }, [out('1!H' + r, F.pc2, 'chip')])
-      ]));
-    });
-    painter(function (V) {
-      document.querySelectorAll('[data-k^="1!H"]').forEach(function (el) { el.style.visibility = el.textContent ? '' : 'hidden'; });
-    });
-    var brokers = card('Aracı kurumlar', "Kayıt sayfasında kurumu seçince oranı otomatik uygulanır. Oranı boş bırakırsan varsayılan oran kullanılır.", br,
-      { note: "Kurum adlarını kendi kullandığın aracı kurumlarla değiştir (8'e kadar). Oranı boş bırakırsan varsayılan oran kullanılır." });
-
     // Kaynaklar
     var src = [];
     if (!s.sources.length) {
@@ -1100,15 +1075,14 @@ var Engine = (function () {
       action: h('button', { type: 'button', class: 'btn', 'data-src-add': '1', onclick: function () { sourceDialog(null); } }, ['＋ Kaynak ekle'])
     });
 
-    var g = guide('Nasıl kullanılır — bu sekme planının ayarlarıdır', [
+    var g = guide('Nasıl kullanılır — Portföy planı', [
       'Mavi alanlar senin girdilerin; diğer değerler otomatik hesaplanır.',
-      'Komisyon: Her aracı kurumun adını ve oranını Aracı kurumlar kartına yaz. Kayıt sayfasında kurumu seçince oranı otomatik uygulanır. Kurum oranı boşsa veya kurum seçilmezse varsayılan oran kullanılır.',
-      'Sapma eşiği: bir varlığın payı hedeften kaç puan uzaklaşınca uyarı almak istediğin (örn. %5).',
-      'Hedef ağırlık: paranın varlıklara nasıl bölünmesini istediğin. Toplamı %100 olmalı (kartın altındaki rozet kontrol eder). Yatırım yaparken yeni paranı bu oranlara göre böl.'
+      'Hedef ağırlık: paranın varlıklara nasıl bölünmesini istediğin. Toplamı %100 olmalı (kartın altındaki rozet kontrol eder). Yatırım yaparken yeni paranı bu oranlara göre böl.',
+      'Komisyon oranları ve aracı kurumlar İşlem kaydı sekmesinde; rebalancing sapma eşiği Rebalancing sekmesinde.'
     ]);
 
-    return [pageHead('Portföy planı', 'Hedef dağılımını, komisyon oranlarını ve uyarı eşiğini buradan ayarla. Mavi alanlar senin girdilerin; diğer her şey otomatik hesaplanır.'),
-      h('div', { class: 'stack' }, [h('div', { class: 'grid-2' }, [alloc, h('div', { class: 'stack' }, [settings, brokers])]), sources, g])];
+    return [pageHead('Portföy planı', 'Hedef dağılımını ve sık kullandığın kaynakları buradan yönet. Mavi alanlar senin girdilerin; diğer her şey otomatik hesaplanır.'),
+      h('div', { class: 'stack' }, [alloc, sources, g])];
   }
 
   // =====================================================================
@@ -1203,7 +1177,7 @@ var Engine = (function () {
       if (r < 13) painter(function (V) { tr.style.display = V['2!M' + r] === '' ? 'none' : ''; });
       brows.appendChild(tr);
     })(r);
-    var brokerSum = card('🏦 Aracı kurum bazında özet', "Kurum listesini Portföy planı sekmesinde düzenle; bu tablo kendiliğinden güncellenir.", [
+    var brokerSum = card('🏦 Aracı kurum bazında özet', 'Kurum listesini aşağıdaki Aracı kurumlar ve komisyon kartında düzenle; bu tablo kendiliğinden güncellenir.', [
       h('div', { class: 'tscroll' }, [h('table', { class: 't' }, [
         h('thead', null, [h('tr', null, [h('th', { text: 'Kurum' }), h('th', { class: 'num', text: 'Ödenen' }), h('th', { class: 'num', text: 'Komisyon' }), h('th', { class: 'num', text: 'Net yatırım' }), h('th', { class: 'num', text: 'Pay' }), h('th', { class: 'ctr', text: 'İşlem' })])]),
         brows,
@@ -1211,11 +1185,37 @@ var Engine = (function () {
       ])])
     ], { flush: true });
 
+    // Aracı kurumlar ve komisyon (Portföy planı sekmesinden taşındı; hücreler hâlâ 1. tablonun B4, F4:H11 hücreleri)
+    var brokerCol = function (from, to) {
+      var col = [h('div', { class: 'broker-row head' }, [h('span'), h('span', { text: 'Kurum adı' }), h('span', { text: 'Komisyon oranı' }), h('span', { text: 'Kullanılan', style: 'text-align:right' })])];
+      s.brokers.slice(from, to).forEach(function (b, k) {
+        var i = from + k, r = 4 + i;
+        col.push(h('div', { class: 'broker-row' }, [
+          h('span', { class: 'idx', text: String(i + 1) }),
+          inp('1!F' + r, bind(b, 'name', 'text', { ph: 'Kurum ekle', label: 'Kurum ' + (i + 1) + ' adı' })),
+          inp('1!G' + r, bind(b, 'rate', 'pct', { f: F.pc2, ph: 'Varsayılan', label: 'Kurum ' + (i + 1) + ' komisyon oranı' }), 'r'),
+          h('span', { style: 'text-align:right' }, [out('1!H' + r, F.pc2, 'chip')])
+        ]));
+      });
+      return h('div', null, col);
+    };
+    painter(function () {
+      document.querySelectorAll('[data-k^="1!H"]').forEach(function (el) { el.style.visibility = el.textContent ? '' : 'hidden'; });
+    });
+    var commission = card('🏦 Aracı kurumlar ve komisyon', 'Kayıtta kurumu seçince oranı otomatik uygulanır. Öncelik: işleme özel oran → kurum oranı → varsayılan oran.', [
+      h('div', { class: 'comm-default' }, [h('div', { class: 'field' }, [
+        h('span', { class: 'lab' }, ['Varsayılan komisyon oranı', note("Aracı kurumunun işlem komisyonu. Kayıtta komisyon % boş bırakılırsa ve kurumun oranı yoksa bu oran kullanılır. Örnek değerdir, kendi oranını yaz.")]),
+        inp('1!B4', bind(s.settings, 'defComm', 'pct', { f: F.pc2, label: 'Varsayılan komisyon oranı' }), 'r'),
+        h('span', { class: 'hint', text: 'Kurum ya da işlem oranı yoksa bu kullanılır.' })
+      ])]),
+      h('div', { class: 'broker-grid' }, [brokerCol(0, 4), brokerCol(4, 8)])
+    ], { note: "Kurum adlarını kendi kullandığın aracı kurumlarla değiştir (8'e kadar). Oranı boş bırakırsan varsayılan oran kullanılır." });
+
     var defs = h('dl', { class: 'defs' });
     [['Tarih', 'Alım günü (gg.aa.yyyy). Her alım ayrı satır; aynı ay birden fazla olabilir.'],
      ['Varlık', 'Açılır listeden varlık kategorisini seç.'],
      ['Enstrüman', 'Ne aldığın: SPY, Gram Altın, fon kodu vb. (bilgi amaçlı).'],
-     ['Aracı kurum', 'Listeden kurumu seç. Liste ve oranlar: Portföy planı sekmesi.'],
+     ['Aracı kurum', 'Listeden kurumu seç. Liste ve oranlar: bu sekmedeki Aracı kurumlar ve komisyon kartı.'],
      ['Ödenen tutar', 'Hesabından çıkan toplam TL (komisyon dahil).'],
      ['Komisyon %', 'Opsiyonel. Boşsa kurumun oranı, o da yoksa varsayılan oran kullanılır.'],
      ['Gri sütunlar', 'Otomatik: oran, komisyon, net tutar, takip ayı (ilk yatırım ayı = 1). Dokunma.'],
@@ -1227,7 +1227,7 @@ var Engine = (function () {
     ], defs);
 
     return [pageHead('Yatırım işlem defteri', 'Her alımı istediğin tarihte bir satır olarak gir. Hesaplamalar ilk girişinle başlar.'),
-      h('div', { class: 'stack' }, [tiles, ledger, h('div', { class: 'grid-2e' }, [assetSum, brokerSum]), g])];
+      h('div', { class: 'stack' }, [tiles, ledger, h('div', { class: 'grid-2e' }, [assetSum, brokerSum]), commission, g])];
   }
   function pencil() {
     var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -1428,7 +1428,11 @@ var Engine = (function () {
     var tiles = h('div', { class: 'tiles' }, [
       tile('Toplam portföy değeri', out('4!B4', F.tlp), 'son değerleme + sonraki alımlar'),
       tile('Son değerleme ayı no', out('4!B2', '0'), '0 = henüz değerleme yok', { note: "Otomatik: 3_Aylık_Takip'teki son değerleme ayı." }),
-      tile('Sapma eşiği (±)', out('4!B3', F.pc2), 'Portföy planı sekmesinden gelir')
+      h('div', { class: 'tile tile-in' }, [
+        h('div', { class: 'lbl' }, ['Sapma eşiği (± puan)', note('Bir varlığın payı hedeften bu kadar puan saptığında aksiyon önerilir.')]),
+        inp('1!B5', bind(state.settings, 'threshold', 'pct', { f: F.pc2, label: 'Sapma eşiği' }), 'r'),
+        h('div', { class: 'sub', text: 'Pay hedeften bu kadar uzaklaşınca uyarı alırsın.' })
+      ])
     ]);
     var rows = [];
     var scale = { max: 1 };
@@ -1469,14 +1473,14 @@ var Engine = (function () {
       h('div', { style: 'margin-top:8px' }, rows), total
     ]);
     var g = guide('Nasıl kullanılır — Rebalancing', [
-      'Bu sekmeye veri girmen gerekmez. Güncel değer: son değerlemedeki varlık değerleri + değerlemeden sonra yaptığın alımlar. Hiç değerleme yoksa yatırdığın net tutarlar kullanılır; yani her kayıtta anında güncellenir.',
-      'Güncel / sapma: Her varlığın portföydeki güncel payı ve hedeften sapması (yüzde puan). Sapma eşiği Portföy planı sekmesinden gelir.',
+      'Buradaki tek ayar sapma eşiği; gerisi otomatik. Güncel değer: son değerlemedeki varlık değerleri + değerlemeden sonra yaptığın alımlar. Hiç değerleme yoksa yatırdığın net tutarlar kullanılır; yani her kayıtta anında güncellenir.',
+      'Güncel / sapma: Her varlığın portföydeki güncel payı ve hedeften sapması (yüzde puan). Sapma eşiğini bu sekmenin üstündeki kutudan değiştirebilirsin.',
       "Aksiyon: 'Kâr Satışı Yap' = varlık hedefinin çok üstünde; 'Alım Yap' = hedefin çok altında, yeni paranı buraya yönlendir; 'Dengede' = dokunma.",
       'Al / Sat tutarı: Hedefe dönmek için alınması (+) / satılması (−) gereken TL. Sadece aksiyon yazan satırları dikkate al.',
       'Öneri: Satış yerine önce yeni yatırımlarını eksik kalan varlıklara yönlendir (vergi ve komisyon ödemezsin).',
       'Hedef ağırlıkları değiştirmek istersen Portföy planı sekmesini güncelle; bu sekme kendiliğinden güncellenir.'
     ]);
-    return [pageHead('Yeniden dengeleme', 'Varlıkların hedeften ne kadar saptığını ve hedefe dönmek için ne yapman gerektiğini gösterir. Bu sekmeye veri girmen gerekmez.'),
+    return [pageHead('Yeniden dengeleme', 'Varlıkların hedeften ne kadar saptığını ve hedefe dönmek için ne yapman gerektiğini gösterir. Buradaki tek ayar sapma eşiği; gerisi otomatik hesaplanır.'),
       h('div', { class: 'stack' }, [tiles, main, g])];
   }
 
