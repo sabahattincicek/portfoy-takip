@@ -5,6 +5,17 @@
 
 ---
 
+## 2026-10-28 14:31 — "Portföy" sekmesi ve Genel durum
+- 1. sekmenin adı "Portföy planı" → "Portföy"; diğer sekmelerdeki göndermeler de güncellendi.
+- Sekmenin en üstüne sade "Genel durum" bölümü (4 kutu, ek veri girişi yok):
+  - Cebinden çıkan = toplam ödenen, komisyon dahil (3. tablo B7) · alım sayısı ve toplam komisyon.
+  - Güncel değer = son değerleme (B10) · hangi aya ait olduğu (B6).
+  - Kâr / zarar = B11, yüzde B12 (son değerlemeye kadar yatırılana göre).
+  - Reel kâr / zarar = B16, yüzde = B16 / B14 (yeni türetilmiş gösterim; motor değişmedi).
+- Değerleme / TÜFE yoksa 0 TL yerine "—" ve ne girileceğini söyleyen kısa yönlendirme; hiç alım yoksa tek satırlık başlangıç mesajı.
+- Son değerlemeden sonra yapılan alım varsa (B7 − B9) tek satırlık bilgi notu: "henüz değerlemeye dahil değil".
+- Test: genel durum 16/16, arayüz 65/65, kaynak 22/22, grafik 15/15, xlsx karşılaştırması 241/241 farksız.
+
 ## 2026-10-28 14:27 — Ayarlar ilgili sekmelere taşındı
 - Portföy planı'ndaki "Ayarlar" kartı kaldırıldı; sekmede artık yalnızca hedef dağılım (tam genişlik) ve kaynaklar var.
 - Varsayılan komisyon oranı + 8 aracı kurum → İşlem kaydı sekmesinde yeni "🏦 Aracı kurumlar ve komisyon" kartı (özet tablolarının altında; kurumlar masaüstünde 2 sütun, telefonda tek sütun). Kartta öncelik sırası yazıyor: işleme özel oran → kurum oranı → varsayılan oran.

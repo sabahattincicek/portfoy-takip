@@ -100,6 +100,10 @@
   .hero .val { color: #fff; font-size: 34px; }
   .hero .sub { color: rgba(255,255,255,.8); }
   .tile.hero { grid-column: span 2; }
+  .overview .ov-title { margin: 0 0 10px; font-size: 15.5px; color: var(--navy); }
+  .ov-note { margin-top: 10px; font-size: 13px; color: var(--text-2); background: var(--navy-soft); border-radius: 8px; padding: 8px 12px; }
+  .ov-empty { margin-bottom: 10px; font-size: 13px; color: var(--muted); }
+  @media (min-width: 1100px) { .tiles.kpi4 { grid-template-columns: repeat(4, minmax(0, 1fr)); } .tiles.kpi4 .tile.hero { grid-column: auto; } }
   @media (min-width: 1100px) { .tiles.kpi5 { grid-template-columns: 1.6fr repeat(4, minmax(0, 1fr)); } .tiles.kpi5 .tile.hero { grid-column: auto; } }
 
   /* ---------- Girdi ---------- */
@@ -789,7 +793,8 @@ var Engine = (function () {
   var F = {
     tl: '#,##0.00 "TL";(#,##0.00 "TL");-', tlp: '#,##0.00 "TL"', p1: '0.0%;(0.0%);-', p1s: '+0.0%;-0.0%;0.0%',
     p2: '0.00%;(0.00%);-', p2m: '0.00%;-0.00%;-', pc2: '0.00%', pc1: '0.0%', int0: '0;-0;-', dt: 'dd.mm.yyyy',
-    mon: 'mmmm yyyy', n4: '0.0000', amt: '#,##0.00;(#,##0.00);-'
+    mon: 'mmmm yyyy', n4: '0.0000', amt: '#,##0.00;(#,##0.00);-',
+    tls: '+#,##0.00 "TL";-#,##0.00 "TL";0.00 "TL"', p2s: '+0.00%;-0.00%;0.00%'
   };
 
   // ---------- Girdi ayrıştırma ----------
@@ -1015,6 +1020,44 @@ var Engine = (function () {
   // =====================================================================
   // 1 — PORTFÖY DAĞILIMI
   // =====================================================================
+  // Genel durum: ne kadar yatırdım, şu an ne kadar, kâr/zarar (nominal ve reel). Değerler Aylık takip hesaplarından.
+  function overviewSection() {
+    // Her alt satırın iki hali var: değerli hali ve "henüz yok" mesajı; boyama sırasında biri gösterilir
+    function two(real) { var msg = h('span', { class: 'muted' }); return { real: h('span', null, real), msg: msg, el: null }; }
+    var reelPct = h('span');
+    var val = two(['Son değerleme: ', out('3!B6', F.mon)]);
+    var nom = two([out('3!B12', F.p2s, 'b', cfSign), ' · son değerlemeye kadar yatırılana göre']);
+    var reel = two([reelPct, ' · enflasyondan arındırılmış']);
+    [val, nom, reel].forEach(function (x) { x.el = h('span', null, [x.real, x.msg]); });
+    var pending = h('div', { class: 'ov-note' });
+    var empty = h('div', { class: 'ov-empty', text: 'İlk alımını İşlem kaydı sekmesine girince genel durumun burada görünür.' });
+    var tiles = h('div', { class: 'tiles kpi4' }, [
+      tile('Cebinden çıkan', out('3!B7', F.tlp), [out('2!R14', '0'), ' alım · ', out('3!B8', F.tlp), ' komisyon dahil']),
+      tile('Güncel değer', out('3!B10', F.tlp), val.el, { hero: true }),
+      tile('Kâr / zarar', out('3!B11', F.tls, '', cfSign), nom.el),
+      tile('Reel kâr / zarar', out('3!B16', F.tls, '', cfSign), reel.el, { note: "Enflasyondan arındırılmış, ilk yatırım ayının TL'si ile. TÜFE'si girilmiş son değerleme ayına göre hesaplanır." })
+    ]);
+    function show(x, ok, msg) { x.real.style.display = ok ? '' : 'none'; x.msg.style.display = ok ? 'none' : ''; x.msg.textContent = ok ? '' : (msg || ''); }
+    painter(function (V) {
+      var hasTx = V['3!B7'] > 0, hasVal = V['3!B5'] > 0, hasReel = V['3!B13'] > 0;
+      var vals = tiles.querySelectorAll('.tile .val');
+      empty.style.display = hasTx ? 'none' : '';
+      // Değerleme yoksa 0 TL göstermek yanıltıcı olur: "—" ve yönlendirme
+      show(val, hasVal, 'Aylık takip sekmesine değerleme gir');
+      show(nom, hasVal, 'Değerleme girilince hesaplanır');
+      show(reel, hasReel, hasVal ? 'Değerleme yaptığın aylara TÜFE de gir' : 'Değerleme ve TÜFE girilince hesaplanır');
+      if (!hasVal) { vals[1].firstChild.textContent = '—'; vals[2].firstChild.textContent = '—'; vals[2].firstChild.className = 'o'; }
+      if (!hasReel) { vals[3].firstChild.textContent = '—'; vals[3].firstChild.className = 'o'; }
+      // Reel getiri % = reel kazanç / reel anapara (B16 / B14)
+      var r = hasReel && Engine.isNum(V['3!B14']) && V['3!B14'] ? V['3!B16'] / V['3!B14'] : '';
+      reelPct.textContent = fmt(r, F.p2s); reelPct.className = 'b ' + cfSign(r);
+      var after = Engine.isNum(V['3!B7']) && Engine.isNum(V['3!B9']) ? V['3!B7'] - V['3!B9'] : 0;
+      pending.style.display = hasVal && after > 0.005 ? '' : 'none';
+      pending.textContent = 'ℹ Son değerlemeden sonra yaptığın ' + fmt(after, F.tlp) + ' alım henüz değerlemeye dahil değil; Aylık takip sekmesine yeni değerleme girince kâr/zarar güncellenir.';
+    });
+    return h('section', { class: 'overview' }, [h('h3', { class: 'ov-title', text: 'Genel durum' }), empty, tiles, pending]);
+  }
+
   function tabPlan() {
     var s = state;
     // Hedef dağılım
@@ -1075,14 +1118,14 @@ var Engine = (function () {
       action: h('button', { type: 'button', class: 'btn', 'data-src-add': '1', onclick: function () { sourceDialog(null); } }, ['＋ Kaynak ekle'])
     });
 
-    var g = guide('Nasıl kullanılır — Portföy planı', [
+    var g = guide('Nasıl kullanılır — Portföy', [
       'Mavi alanlar senin girdilerin; diğer değerler otomatik hesaplanır.',
       'Hedef ağırlık: paranın varlıklara nasıl bölünmesini istediğin. Toplamı %100 olmalı (kartın altındaki rozet kontrol eder). Yatırım yaparken yeni paranı bu oranlara göre böl.',
       'Komisyon oranları ve aracı kurumlar İşlem kaydı sekmesinde; rebalancing sapma eşiği Rebalancing sekmesinde.'
     ]);
 
-    return [pageHead('Portföy planı', 'Hedef dağılımını ve sık kullandığın kaynakları buradan yönet. Mavi alanlar senin girdilerin; diğer her şey otomatik hesaplanır.'),
-      h('div', { class: 'stack' }, [alloc, sources, g])];
+    return [pageHead('Portföy', 'Genel durumun, hedef dağılımın ve sık kullandığın kaynaklar. Mavi alanlar senin girdilerin; diğer her şey otomatik hesaplanır.'),
+      h('div', { class: 'stack' }, [overviewSection(), alloc, sources, g])];
   }
 
   // =====================================================================
@@ -1185,7 +1228,7 @@ var Engine = (function () {
       ])])
     ], { flush: true });
 
-    // Aracı kurumlar ve komisyon (Portföy planı sekmesinden taşındı; hücreler hâlâ 1. tablonun B4, F4:H11 hücreleri)
+    // Aracı kurumlar ve komisyon (Portföy sekmesinden taşındı; hücreler hâlâ 1. tablonun B4, F4:H11 hücreleri)
     var brokerCol = function (from, to) {
       var col = [h('div', { class: 'broker-row head' }, [h('span'), h('span', { text: 'Kurum adı' }), h('span', { text: 'Komisyon oranı' }), h('span', { text: 'Kullanılan', style: 'text-align:right' })])];
       s.brokers.slice(from, to).forEach(function (b, k) {
@@ -1221,7 +1264,7 @@ var Engine = (function () {
      ['Gri sütunlar', 'Otomatik: oran, komisyon, net tutar, takip ayı (ilk yatırım ayı = 1). Dokunma.'],
      ['Not', "İstediğin açıklama (örn. 'prim parası')."]].forEach(function (p) { defs.appendChild(h('dt', { text: p[0] })); defs.appendChild(h('dd', { text: p[1] })); });
     var g = guide('Sütunlar ve ipuçları', null, [
-      '💡 Yeni paranı Portföy planı sekmesindeki hedef ağırlıklara göre böl.',
+      '💡 Yeni paranı Portföy sekmesindeki hedef ağırlıklara göre böl.',
       '💡 Özetler her girişte anında güncellenir.',
       '💡 Ay sonunda Aylık takip sekmesine TÜFE ve varlık değerlerini gir.'
     ], defs);
@@ -1405,7 +1448,7 @@ var Engine = (function () {
       h('div', { class: 'field' }, [h('span', { class: 'lab', text: 'TÜFE kaynağı' }), inp('3!E13', bind(s.links3, 'tufe', 'link'))]),
       h('div', { class: 'field' }, [h('span', { class: 'lab', text: 'Aracı kurum' }), inp('3!E14', bind(s.links3, 'broker', 'link'))]),
       h('div', { class: 'field' }, [h('span', { class: 'lab', text: 'Diğer' }), inp('3!E15', bind(s.links3, 'other', 'link'))]),
-      h('span', { class: 'muted', text: 'Tüm kaynak listesi: Portföy planı sekmesi.' })
+      h('span', { class: 'muted', text: 'Tüm kaynak listesi: Portföy sekmesi.' })
     ])]);
     var g = guide('Nasıl kullanılır — Aylık takip', [
       'Bu tablo İşlem kaydı sekmesine ilk girişini yaptığında başlar. Ay 1 = ilk yatırımının ayı; her yeni ay kendiliğinden eklenir (120 aya kadar).',
@@ -1478,7 +1521,7 @@ var Engine = (function () {
       "Aksiyon: 'Kâr Satışı Yap' = varlık hedefinin çok üstünde; 'Alım Yap' = hedefin çok altında, yeni paranı buraya yönlendir; 'Dengede' = dokunma.",
       'Al / Sat tutarı: Hedefe dönmek için alınması (+) / satılması (−) gereken TL. Sadece aksiyon yazan satırları dikkate al.',
       'Öneri: Satış yerine önce yeni yatırımlarını eksik kalan varlıklara yönlendir (vergi ve komisyon ödemezsin).',
-      'Hedef ağırlıkları değiştirmek istersen Portföy planı sekmesini güncelle; bu sekme kendiliğinden güncellenir.'
+      'Hedef ağırlıkları değiştirmek istersen Portföy sekmesini güncelle; bu sekme kendiliğinden güncellenir.'
     ]);
     return [pageHead('Yeniden dengeleme', 'Varlıkların hedeften ne kadar saptığını ve hedefe dönmek için ne yapman gerektiğini gösterir. Buradaki tek ayar sapma eşiği; gerisi otomatik hesaplanır.'),
       h('div', { class: 'stack' }, [tiles, main, g])];
@@ -1716,7 +1759,7 @@ var Engine = (function () {
 
   // ---------- Sekmeler, yeniden hesaplama ----------
   var TABS = [
-    { id: 's1', label: 'Portföy planı', build: tabPlan },
+    { id: 's1', label: 'Portföy', build: tabPlan },
     { id: 's2', label: 'İşlem kaydı', build: tabLedger },
     { id: 's3', label: 'Aylık takip', build: tabMonthly },
     { id: 's4', label: 'Rebalancing', build: tabRebalance },
